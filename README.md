@@ -1,4 +1,5 @@
 # E-Ticaret Sitesi - XML Import Sistemi
+* Deploy Test
 
 Bu proje, XML verilerinden otomatik olarak ürün kataloğu oluşturan ve yöneten bir e-ticaret sitesidir.
 
