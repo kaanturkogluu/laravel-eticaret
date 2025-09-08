@@ -1,49 +1,36 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Admin Dashboard - Basital.com')
+@section('page-title', 'Dashboard')
 
 @section('content')
-<div class="container-fluid px-0">
-    <div class="container">
-        <div class="row">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>
-                <i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard
-            </h2>
-            <div class="text-muted">
-                Hoş geldiniz, {{ auth()->user()->name }}
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Hızlı İşlemler -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header">
                 <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Hızlı İşlemler</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-3 mb-3">
-                        <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                        <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#addProductModal">
                             <i class="fas fa-plus me-2"></i>Manuel Ürün Ekle
                         </button>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <button class="btn btn-outline-success w-100" data-bs-toggle="modal" data-bs-target="#xmlImportModal">
+                        <a href="{{ route('admin.xml-import') }}" class="btn btn-success w-100">
                             <i class="fas fa-file-import me-2"></i>XML İçe Aktar
-                        </button>
+                        </a>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <button class="btn btn-outline-info w-100" data-bs-toggle="modal" data-bs-target="#marketplaceModal">
+                        <button class="btn btn-info w-100" data-bs-toggle="modal" data-bs-target="#marketplaceModal">
                             <i class="fas fa-store me-2"></i>Pazaryeri Entegrasyonu
                         </button>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <a href="{{ route('products.index') }}" class="btn btn-outline-warning w-100">
+                        <a href="{{ route('products.index') }}" class="btn btn-warning w-100">
                             <i class="fas fa-list me-2"></i>Ürünleri Yönet
                         </a>
                     </div>
@@ -56,86 +43,73 @@
 <!-- İstatistik Kartları -->
 <div class="row mb-4">
     <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-primary text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="mb-0">{{ \App\Models\Product::count() }}</h4>
-                        <p class="mb-0">Toplam Ürün</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-box fa-2x"></i>
-                    </div>
+        <div class="stats-card primary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stats-number">{{ \App\Models\Product::count() }}</div>
+                    <div class="stats-label">Toplam Ürün</div>
+                </div>
+                <div class="stats-icon">
+                    <i class="fas fa-box"></i>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card bg-success text-white h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="mb-0">{{ \App\Models\Product::active()->inStock()->count() }}</h4>
-                        <p class="mb-0">Aktif Ürün</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-check-circle fa-2x"></i>
-                    </div>
+        <div class="stats-card success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stats-number">{{ \App\Models\Product::active()->inStock()->count() }}</div>
+                    <div class="stats-label">Aktif Ürün</div>
+                </div>
+                <div class="stats-icon">
+                    <i class="fas fa-check-circle"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="mb-0">{{ \App\Models\Product::where('miktar', '<', 2)->count() }}</h4>
-                        <p class="mb-0">Düşük Stok</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-exclamation-triangle fa-2x"></i>
-                    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stats-number">{{ \App\Models\Product::where('miktar', '<', 2)->count() }}</div>
+                    <div class="stats-label">Düşük Stok</div>
+                </div>
+                <div class="stats-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="mb-0">{{ \App\Models\User::count() }}</h4>
-                        <p class="mb-0">Toplam Kullanıcı</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-users fa-2x"></i>
-                    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stats-number">{{ \App\Models\User::count() }}</div>
+                    <div class="stats-label">Toplam Kullanıcı</div>
+                </div>
+                <div class="stats-icon">
+                    <i class="fas fa-users"></i>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Hızlı İşlemler -->
+<!-- Ek Hızlı İşlemler -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="fas fa-bolt me-2"></i>Hızlı İşlemler
+                    <i class="fas fa-tools me-2"></i>Ek İşlemler
                 </h5>
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <a href="{{ route('admin.xml-import') }}" class="btn btn-primary w-100">
-                            <i class="fas fa-upload me-2"></i>XML Import
-                        </a>
-                    </div>
                     <div class="col-md-3 mb-3">
                         <form method="POST" action="{{ route('admin.xml-import.liste') }}" class="d-inline w-100">
                             @csrf
@@ -146,18 +120,19 @@
                         </form>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <form method="POST" action="{{ route('admin.stock-control') }}" class="d-inline w-100">
-                            @csrf
-                            <button type="submit" class="btn btn-warning w-100" 
-                                    onclick="return confirm('Stok kontrolü yapılacak. Devam etmek istiyor musunuz?')">
-                                <i class="fas fa-boxes me-2"></i>Stok Kontrolü
-                            </button>
-                        </form>
+                        <a href="{{ route('admin.xml-history') }}" class="btn btn-dark w-100">
+                            <i class="fas fa-history me-2"></i>XML Geçmişi
+                        </a>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <a href="{{ route('products.index') }}" class="btn btn-info w-100">
-                            <i class="fas fa-eye me-2"></i>Ürünleri Görüntüle
+                        <a href="{{ route('cart.index') }}" class="btn btn-secondary w-100">
+                            <i class="fas fa-shopping-cart me-2"></i>Sepet Yönetimi
                         </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <button class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#stockControlModal">
+                            <i class="fas fa-boxes me-2"></i>Stok Kontrolü
+                        </button>
                     </div>
                 </div>
             </div>
@@ -346,140 +321,59 @@
         </div>
     </div>
 </div>
+@endsection
 
-<!-- XML İçe Aktarma Modal -->
-<div class="modal fade" id="xmlImportModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title"><i class="fas fa-file-import me-2"></i>XML İçe Aktar</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form action="{{ route('admin.xml.import') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        XML dosyası yükleyerek ürünleri toplu olarak içe aktarabilirsiniz.
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">XML Dosyası *</label>
-                        <input type="file" class="form-control" name="xml_file" accept=".xml" required>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Güncelleme Modu</label>
-                            <select class="form-control" name="update_mode">
-                                <option value="replace">Mevcut verileri değiştir</option>
-                                <option value="merge">Mevcut verilerle birleştir</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Stok Kontrolü</label>
-                            <select class="form-control" name="stock_control">
-                                <option value="1">Stok kontrolü yap</option>
-                                <option value="0">Stok kontrolü yapma</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                    <button type="submit" class="btn btn-success">XML İçe Aktar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Pazaryeri Entegrasyonu Modal -->
-<div class="modal fade" id="marketplaceModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title"><i class="fas fa-store me-2"></i>Pazaryeri Entegrasyonu</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6 mb-4">
-                        <div class="card h-100">
-                            <div class="card-header bg-warning text-dark">
-                                <h6 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Hepsiburada</h6>
-                            </div>
-                            <div class="card-body">
-                                <p class="card-text">Hepsiburada pazaryerine ürünlerinizi otomatik olarak aktarın.</p>
-                                <div class="mb-3">
-                                    <label class="form-label">API Anahtarı</label>
-                                    <input type="password" class="form-control" placeholder="Hepsiburada API anahtarınız">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Satıcı ID</label>
-                                    <input type="text" class="form-control" placeholder="Satıcı ID'niz">
-                                </div>
-                                <button class="btn btn-warning w-100">Hepsiburada Bağlantısını Test Et</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-4">
-                        <div class="card h-100">
-                            <div class="card-header bg-primary text-white">
-                                <h6 class="mb-0"><i class="fas fa-shopping-bag me-2"></i>Trendyol</h6>
-                            </div>
-                            <div class="card-body">
-                                <p class="card-text">Trendyol pazaryerine ürünlerinizi otomatik olarak aktarın.</p>
-                                <div class="mb-3">
-                                    <label class="form-label">API Anahtarı</label>
-                                    <input type="password" class="form-control" placeholder="Trendyol API anahtarınız">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Satıcı ID</label>
-                                    <input type="text" class="form-control" placeholder="Satıcı ID'niz">
-                                </div>
-                                <button class="btn btn-primary w-100">Trendyol Bağlantısını Test Et</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-header bg-success text-white">
-                                <h6 class="mb-0"><i class="fas fa-sync me-2"></i>Otomatik Senkronizasyon</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">Senkronizasyon Sıklığı</label>
-                                        <select class="form-control">
-                                            <option value="30">30 dakikada bir</option>
-                                            <option value="60">1 saatte bir</option>
-                                            <option value="120">2 saatte bir</option>
-                                            <option value="240">4 saatte bir</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">Stok Güncelleme</label>
-                                        <select class="form-control">
-                                            <option value="1">Otomatik güncelle</option>
-                                            <option value="0">Manuel güncelle</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">Fiyat Güncelleme</label>
-                                        <select class="form-control">
-                                            <option value="1">Otomatik güncelle</option>
-                                            <option value="0">Manuel güncelle</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <button class="btn btn-success">Senkronizasyon Ayarlarını Kaydet</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+@section('scripts')
+<script>
+$(document).ready(function() {
+    // Manuel ürün ekleme formu
+    $('#addProductModal form').on('submit', function(e) {
+        e.preventDefault();
+        
+        var formData = new FormData(this);
+        var $form = $(this);
+        var $submitBtn = $form.find('button[type="submit"]');
+        
+        // Butonu devre dışı bırak
+        $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Ekleniyor...');
+        
+        $.ajax({
+            url: $form.attr('action'),
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                // Başarılı mesajı göster
+                showAlert('success', 'Ürün başarıyla eklendi!');
+                
+                // Modal'ı kapat
+                $('#addProductModal').modal('hide');
+                
+                // Formu temizle
+                $form[0].reset();
+                
+                // Sayfayı yenile
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            },
+            error: function(xhr) {
+                var errors = xhr.responseJSON?.errors || {};
+                var errorMessage = 'Bir hata oluştu!';
+                
+                if (Object.keys(errors).length > 0) {
+                    errorMessage = Object.values(errors).flat().join('<br>');
+                }
+                
+                showAlert('danger', errorMessage);
+            },
+            complete: function() {
+                // Butonu eski haline getir
+                $submitBtn.prop('disabled', false).html('Ürün Ekle');
+            }
+        });
+    });
+});
+</script>
 @endsection

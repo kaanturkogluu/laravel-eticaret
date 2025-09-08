@@ -1,15 +1,16 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'XML Import - Admin Panel')
+@section('page-title', 'XML İçe Aktar')
 
 @section('content')
-<div class="row justify-content-center">
+<div class="row">
     <div class="col-lg-8">
         <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">
+            <div class="card-header">
+                <h5 class="mb-0">
                     <i class="fas fa-upload me-2"></i>XML Import Yönetimi
-                </h4>
+                </h5>
             </div>
             <div class="card-body">
                 <!-- Liste.xml Import -->
@@ -72,6 +73,12 @@
                     
                     <form method="POST" action="{{ route('admin.stock-control') }}" class="d-inline">
                         @csrf
+                        <div class="mb-3">
+                            <label for="min_stock" class="form-label">Minimum Stok Miktarı</label>
+                            <input type="number" id="min_stock" name="min_stock" value="2" min="0" 
+                                   class="form-control" placeholder="Min. Stok" required>
+                            <div class="form-text">Bu miktarın altındaki ürünler stokta az olarak işaretlenir.</div>
+                        </div>
                         <button type="submit" class="btn btn-warning" 
                                 onclick="return confirm('Stok kontrolü yapılacak. Devam etmek istiyor musunuz?')">
                             <i class="fas fa-check-circle me-2"></i>Stok Kontrolü Yap

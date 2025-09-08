@@ -163,6 +163,36 @@
     @yield('styles')
 </head>
 <body>
+    <!-- Currency Rates Bar -->
+    <div class="bg-light border-bottom py-2">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-chart-line text-primary me-2"></i>
+                        <span class="text-muted small me-3">Güncel Döviz Kurları:</span>
+                        <div class="currency-rates">
+                            @php
+                                $currencies = \App\Models\Currency::getRatesFor(['USD', 'EUR', 'GBP']);
+                            @endphp
+                            @foreach($currencies as $currency)
+                                <span class="badge bg-secondary me-2">
+                                    {{ $currency->code }}: {{ $currency->formatted_rate }} ₺
+                                </span>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        Son güncelleme: {{ $currencies->first() ? $currencies->first()->last_updated->format('H:i') : 'Bilinmiyor' }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
@@ -182,6 +212,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('products.index') }}">Ürünler</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('cargo-tracking.track') }}">Kargo Takip</a>
+                    </li>
                 </ul>
                 
                 <!-- Arama Alanı -->
@@ -197,6 +230,30 @@
                 </form>
                 
                 <ul class="navbar-nav">
+                    <!-- Sepet İkonu -->
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="{{ route('cart.index') }}">
+                            <i class="fas fa-shopping-cart me-1"></i>Sepet
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger cart-count" 
+                                  style="display: none;">
+                                0
+                            </span>
+                        </a>
+                    </li>
+                    
+                    @auth
+                    <!-- Favoriler İkonu -->
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="{{ route('favorites.index') }}">
+                            <i class="fas fa-heart me-1"></i>Favoriler
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger favorite-count" 
+                                  style="display: none;">
+                                0
+                            </span>
+                        </a>
+                    </li>
+                    @endauth
+                    
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('customer.dashboard') }}">
                             <i class="fas fa-user me-1"></i>Hesabım
@@ -308,6 +365,71 @@
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }
         });
+
+        // Sayfa yüklendiğinde sepet ve favori sayacını güncelle
+        $(document).ready(function() {
+            updateCartCountOnLoad();
+            updateFavoriteCountOnLoad();
+        });
+
+        // Sepet sayacını güncelle
+        function updateCartCount(count) {
+            const $cartCount = $('.cart-count');
+            if ($cartCount.length) {
+                $cartCount.text(count);
+                $cartCount.toggle(count > 0);
+            }
+        }
+
+        // Sayfa yüklendiğinde sepet sayacını getir
+        function updateCartCountOnLoad() {
+            $.ajax({
+                url: '{{ route("cart.count") }}',
+                method: 'GET',
+                success: function(data) {
+                    updateCartCount(data.count);
+                },
+                error: function() {
+                    updateCartCount(0);
+                }
+            });
+        }
+
+        // Favori sayacını güncelle
+        function updateFavoriteCount(count) {
+            const $favoriteCount = $('.favorite-count');
+            if ($favoriteCount.length) {
+                $favoriteCount.text(count);
+                $favoriteCount.toggle(count > 0);
+            }
+        }
+
+        // Sayfa yüklendiğinde favori sayacını getir
+        function updateFavoriteCountOnLoad() {
+            @auth
+            $.ajax({
+                url: '{{ route("favorites.count") }}',
+                method: 'GET',
+                success: function(data) {
+                    if (data.success) {
+                        updateFavoriteCount(data.count);
+                    }
+                },
+                error: function() {
+                    updateFavoriteCount(0);
+                }
+            });
+            @endauth
+        }
+
+        // Global resim yükleme hatası yönetimi
+        function handleImageError(img) {
+            // Sadece bir kez değiştir, sonsuz döngüyü engelle
+            if (!img.dataset.errorHandled) {
+                img.src = '{{ asset("images/no-product-image.svg") }}';
+                img.dataset.errorHandled = 'true';
+            }
+        }
     </script>
     
     @yield('scripts')

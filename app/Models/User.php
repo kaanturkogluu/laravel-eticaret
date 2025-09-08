@@ -57,4 +57,38 @@ class User extends Authenticatable
     {
         return $this->is_admin;
     }
+
+    /**
+     * Kullanıcının siparişleri
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Kullanıcının sepeti
+     */
+    public function cartItems()
+    {
+        return $this->hasMany(Cart::class);
+    }
+
+    /**
+     * Kullanıcının favori ürünleri
+     */
+    public function favorites()
+    {
+        return $this->hasMany(Favorite::class);
+    }
+
+    /**
+     * Kullanıcının favori ürünleri (ürün detayları ile)
+     */
+    public function favoriteProducts()
+    {
+        return $this->belongsToMany(Product::class, 'favorites', 'user_id', 'product_kod', 'id', 'kod')
+            ->withTimestamps()
+            ->orderBy('favorites.created_at', 'desc');
+    }
 }

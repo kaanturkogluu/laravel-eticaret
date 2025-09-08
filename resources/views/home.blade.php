@@ -623,15 +623,25 @@
                             <img src="{{ $product->images->first()->resim_url }}" 
                                  class="card-img-top product-image" 
                                  alt="{{ $product->ad }}"
-                                 onerror="this.src='https://via.placeholder.com/300x200?text=Resim+Yok'">
+                                 onerror="handleImageError(this)">
                         @else
-                            <img src="https://via.placeholder.com/300x200?text=Resim+Yok" 
+                            <img src="{{ asset('images/no-product-image.svg') }}" 
                                  class="card-img-top product-image" 
                                  alt="{{ $product->ad }}">
                         @endif
                         <div class="position-absolute top-0 end-0 m-2">
                             <span class="badge bg-success">Stokta</span>
                         </div>
+                        
+                        @auth
+                        <!-- Favori Butonu -->
+                        <button class="btn btn-sm btn-outline-danger position-absolute" 
+                                style="top: 10px; left: 10px; z-index: 10;"
+                                onclick="toggleFavorite('{{ $product->kod }}', this)"
+                                data-product-kod="{{ $product->kod }}">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                        @endauth
                     </div>
                     <div class="card-body">
                         <h5 class="card-title">{{ Str::limit($product->ad, 50) }}</h5>
@@ -673,12 +683,22 @@
                             <img src="{{ $product->images->first()->resim_url }}" 
                                  class="card-img-top product-image" 
                                  alt="{{ $product->ad }}"
-                                 onerror="this.src='https://via.placeholder.com/300x200?text=Resim+Yok'">
+                                 onerror="handleImageError(this)">
                         @else
-                            <img src="https://via.placeholder.com/300x200?text=Resim+Yok" 
+                            <img src="{{ asset('images/no-product-image.svg') }}" 
                                  class="card-img-top product-image" 
                                  alt="{{ $product->ad }}">
                         @endif
+                        
+                        @auth
+                        <!-- Favori Butonu -->
+                        <button class="btn btn-sm btn-outline-danger position-absolute" 
+                                style="top: 10px; left: 10px; z-index: 10;"
+                                onclick="toggleFavorite('{{ $product->kod }}', this)"
+                                data-product-kod="{{ $product->kod }}">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                        @endauth
                     </div>
                     <div class="card-body">
                         <h5 class="card-title">{{ Str::limit($product->ad, 50) }}</h5>
@@ -753,4 +773,89 @@
         </div>
     </div>
 </section>
+@endsection
+
+@section('scripts')
+<script>
+// Favori toggle fonksiyonu
+function toggleFavorite(productKod, button) {
+    const $button = $(button);
+    const $icon = $button.find('i');
+    
+    // Loading state
+    $button.prop('disabled', true);
+    $icon.removeClass('fas fa-heart').addClass('fas fa-spinner fa-spin');
+    
+    $.ajax({
+        url: '{{ route("favorites.toggle") }}',
+        method: 'POST',
+        data: {
+            product_kod: productKod
+        },
+        success: function(response) {
+            if (response.success) {
+                if (response.is_favorite) {
+                    $button.removeClass('btn-outline-danger').addClass('btn-danger');
+                    $icon.removeClass('fa-spinner fa-spin').addClass('fas fa-heart');
+                    showToast('success', response.message);
+                } else {
+                    $button.removeClass('btn-danger').addClass('btn-outline-danger');
+                    $icon.removeClass('fa-spinner fa-spin').addClass('fas fa-heart');
+                    showToast('info', response.message);
+                }
+                
+                // Favori sayacını güncelle
+                updateFavoriteCount();
+            }
+        },
+        error: function(xhr) {
+            const response = xhr.responseJSON;
+            showToast('error', response?.message || 'Bir hata oluştu.');
+            $icon.removeClass('fa-spinner fa-spin').addClass('fas fa-heart');
+        },
+        complete: function() {
+            $button.prop('disabled', false);
+        }
+    });
+}
+
+// Favori sayacını güncelle
+function updateFavoriteCount() {
+    $.ajax({
+        url: '{{ route("favorites.count") }}',
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                const $favoriteCount = $('.favorite-count');
+                if ($favoriteCount.length) {
+                    $favoriteCount.text(response.count);
+                    $favoriteCount.toggle(response.count > 0);
+                }
+            }
+        }
+    });
+}
+
+// Toast mesajı göster
+function showToast(type, message) {
+    const alertClass = type === 'success' ? 'alert-success' : 
+                      type === 'error' ? 'alert-danger' : 'alert-info';
+    const iconClass = type === 'success' ? 'fa-check-circle' : 
+                     type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+    
+    const toast = $(`
+        <div class="alert ${alertClass} position-fixed" style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+            <i class="fas ${iconClass} me-2"></i>${message}
+        </div>
+    `);
+    
+    $('body').append(toast);
+    
+    // 3 saniye sonra kaldır
+    setTimeout(() => {
+        toast.fadeOut(() => toast.remove());
+    }, 3000);
+}
+
+</script>
 @endsection

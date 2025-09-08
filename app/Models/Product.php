@@ -106,6 +106,51 @@ class Product extends Model
     public function getFormattedPriceAttribute()
     {
         $price = $this->best_price;
-        return $price ? number_format($price, 2) . ' ' . $this->doviz : 'Fiyat Belirtilmemiş';
+        return $price ? number_format($price, 2) . ' ' . $this->getCurrencySymbol() : 'Fiyat Belirtilmemiş';
+    }
+
+    /**
+     * Para birimi sembolü
+     */
+    public function getCurrencySymbol()
+    {
+        return match(strtoupper($this->doviz)) {
+            'TRY', 'TL' => '₺',
+            'USD' => '$',
+            'EUR' => '€',
+            'GBP' => '£',
+            default => $this->doviz
+        };
+    }
+
+    /**
+     * Para birimi sembolü (static method)
+     */
+    public static function getCurrencySymbolFor($currency)
+    {
+        return match(strtoupper($currency)) {
+            'TRY', 'TL' => '₺',
+            'USD' => '$',
+            'EUR' => '€',
+            'GBP' => '£',
+            default => $currency
+        };
+    }
+
+    /**
+     * Bu ürünü favorilere ekleyen kullanıcılar
+     */
+    public function favoritedBy()
+    {
+        return $this->belongsToMany(User::class, 'favorites', 'product_kod', 'user_id', 'kod', 'id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Belirli bir kullanıcının bu ürünü favorilere ekleyip eklemediğini kontrol et
+     */
+    public function isFavoritedBy($userId)
+    {
+        return $this->favoritedBy()->where('user_id', $userId)->exists();
     }
 }

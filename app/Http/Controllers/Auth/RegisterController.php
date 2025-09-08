@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\WelcomeMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 
 class RegisterController extends Controller
 {
@@ -39,6 +41,13 @@ class RegisterController extends Controller
         ]);
 
         Auth::login($user);
+
+        // Hoş geldin maili gönder
+        try {
+            Mail::to($user->email)->send(new WelcomeMail($user));
+        } catch (\Exception $e) {
+            \Log::error('Welcome mail failed: ' . $e->getMessage());
+        }
 
         return redirect()->route('home')->with('success', 'Hesabınız başarıyla oluşturuldu!');
     }

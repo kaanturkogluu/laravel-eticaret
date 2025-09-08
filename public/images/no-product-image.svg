@@ -1,0 +1,9 @@
+<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#f8f9fa"/>
+  <rect x="0" y="0" width="100%" height="100%" fill="none" stroke="#dee2e6" stroke-width="2" stroke-dasharray="5,5"/>
+  <g transform="translate(150, 100)">
+    <circle cx="0" cy="-20" r="25" fill="#dee2e6"/>
+    <rect x="-20" y="10" width="40" height="20" rx="3" fill="#dee2e6"/>
+    <text x="0" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#6c757d">Resim Yok</text>
+  </g>
+</svg>

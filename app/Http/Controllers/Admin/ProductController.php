@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductImage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -13,6 +14,12 @@ class ProductController extends Controller
 {
     public function store(Request $request)
     {
+        \Log::info('Manuel ürün ekleme başladı', [
+            'request_data' => $request->except(['image']),
+            'has_image' => $request->hasFile('image'),
+            'files' => $request->allFiles()
+        ]);
+
         $request->validate([
             'ad' => 'required|string|max:255',
             'kod' => 'required|string|max:255|unique:products,kod',
@@ -22,7 +29,7 @@ class ProductController extends Controller
             'miktar' => 'required|integer|min:0',
             'doviz' => 'required|string|in:TL,USD,EUR',
             'aciklama' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120'
         ]);
 
         $product = Product::create([
@@ -38,14 +45,43 @@ class ProductController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('products', 'public');
-            ProductImage::create([
-                'product_id' => $product->id,
-                'resim_url' => Storage::url($imagePath),
-                'is_primary' => true
+            try {
+                $imagePath = $request->file('image')->store('products', 'public');
+                $imageUrl = Storage::url($imagePath);
+                
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'urun_kodu' => $product->kod,
+                    'resim_url' => $imageUrl,
+                    'sort_order' => 0
+                ]);
+                
+                \Log::info('Resim başarıyla yüklendi', [
+                    'product_id' => $product->id,
+                    'image_path' => $imagePath,
+                    'image_url' => $imageUrl
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Resim yükleme hatası', [
+                    'error' => $e->getMessage(),
+                    'product_id' => $product->id
+                ]);
+            }
+        } else {
+            \Log::info('Resim dosyası bulunamadı', [
+                'files' => $request->allFiles(),
+                'has_file' => $request->hasFile('image')
             ]);
         }
 
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Ürün başarıyla eklendi!',
+                'product' => $product
+            ]);
+        }
+        
         return redirect()->back()->with('success', 'Ürün başarıyla eklendi!');
     }
 

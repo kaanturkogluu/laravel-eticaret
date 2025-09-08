@@ -23,6 +23,9 @@
                 <a href="{{ route('customer.orders') }}" class="list-group-item list-group-item-action">
                     <i class="fas fa-shopping-bag me-2"></i>Siparişlerim
                 </a>
+                <a href="{{ route('favorites.index') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-heart me-2"></i>Favori Ürünlerim
+                </a>
             </div>
         </div>
     </div>
@@ -36,7 +39,7 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="card bg-light">
                             <div class="card-body text-center">
                                 <i class="fas fa-user fa-3x text-primary mb-3"></i>
@@ -46,13 +49,23 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="card bg-light">
                             <div class="card-body text-center">
                                 <i class="fas fa-shopping-bag fa-3x text-success mb-3"></i>
                                 <h5>Siparişlerim</h5>
                                 <p class="text-muted">Sipariş geçmişinizi görüntüleyin</p>
                                 <a href="{{ route('customer.orders') }}" class="btn btn-success">Siparişleri Görüntüle</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <i class="fas fa-heart fa-3x text-danger mb-3"></i>
+                                <h5>Favori Ürünlerim</h5>
+                                <p class="text-muted">Beğendiğiniz ürünleri görüntüleyin</p>
+                                <a href="{{ route('favorites.index') }}" class="btn btn-danger">Favorileri Görüntüle</a>
                             </div>
                         </div>
                     </div>

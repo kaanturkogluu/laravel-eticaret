@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -66,7 +67,12 @@ class CustomerController extends Controller
      */
     public function orders()
     {
-        // Şimdilik boş - sipariş sistemi eklenebilir
-        return view('customer.orders');
+        $user = Auth::user();
+        $orders = Order::with(['items.product.images'])
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('customer.orders', compact('orders'));
     }
 }

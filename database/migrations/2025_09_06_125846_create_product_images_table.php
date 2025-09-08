@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('product_images', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->string('urun_kodu'); // XML'deki UrunKodu
+            $table->string('urun_kodu')->nullable(); // XML'deki UrunKodu
             $table->string('resim_url'); // XML'deki Resim URL'i
             $table->integer('sort_order')->default(0); // Sıralama
             $table->timestamps();

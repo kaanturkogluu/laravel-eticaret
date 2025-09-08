@@ -22,4 +22,12 @@ class ProductImage extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    /**
+     * Resim URL accessor - resim_url alanını image_url olarak erişilebilir yapar
+     */
+    public function getImageUrlAttribute()
+    {
+        return $this->resim_url;
+    }
 }

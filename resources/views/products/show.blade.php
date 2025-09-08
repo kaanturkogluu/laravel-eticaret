@@ -18,7 +18,7 @@
                                      class="d-block w-100 rounded" 
                                      alt="{{ $product->ad }}"
                                      style="height: 400px; object-fit: cover;"
-                                     onerror="this.src='https://via.placeholder.com/600x400?text=Resim+Yok'">
+                                     onerror="handleImageError(this)">
                             </div>
                         @endforeach
                     </div>
@@ -33,9 +33,10 @@
                     @endif
                 </div>
             @else
-                <img src="https://via.placeholder.com/600x400?text=Resim+Yok" 
+                <img src="{{ asset('images/no-product-image.svg') }}" 
                      class="img-fluid rounded" 
-                     alt="{{ $product->ad }}">
+                     alt="{{ $product->ad }}"
+                     style="height: 400px; object-fit: cover;">
             @endif
         </div>
 
@@ -138,12 +139,29 @@
                 @endif
 
                 <div class="d-grid gap-2">
-                    <button class="btn btn-success btn-lg" disabled>
-                        <i class="fas fa-shopping-cart me-2"></i>Sepete Ekle
-                    </button>
-                    <button class="btn btn-outline-primary" disabled>
+                    @if($product->miktar > 0)
+                        <button class="btn btn-success btn-lg add-to-cart-btn" 
+                                data-product-id="{{ $product->id }}"
+                                data-product-name="{{ $product->ad }}">
+                            <i class="fas fa-shopping-cart me-2"></i>Sepete Ekle
+                        </button>
+                    @else
+                        <button class="btn btn-secondary btn-lg" disabled>
+                            <i class="fas fa-times me-2"></i>Stok Yok
+                        </button>
+                    @endif
+                    
+                    @auth
+                    <button class="btn btn-outline-danger favorite-btn" 
+                            data-product-kod="{{ $product->kod }}"
+                            onclick="toggleFavorite('{{ $product->kod }}', this)">
                         <i class="fas fa-heart me-2"></i>Favorilere Ekle
                     </button>
+                    @else
+                    <a href="{{ route('login') }}" class="btn btn-outline-danger">
+                        <i class="fas fa-heart me-2"></i>Favorilere Ekle
+                    </a>
+                    @endauth
                 </div>
 
                 <div class="mt-3 text-center">
@@ -190,11 +208,164 @@
 
         <!-- Geri Dön -->
         <div class="mt-4">
-            <a href="{{ route('products.index') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Ürün Listesine Dön
-            </a>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <a href="{{ route('products.index') }}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-arrow-left me-2"></i>Ürün Listesine Dön
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <a href="{{ route('favorites.index') }}" class="btn btn-outline-danger w-100">
+                        <i class="fas fa-heart me-2"></i>Favorilerim
+                    </a>
+                </div>
+            </div>
         </div>
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+$(document).ready(function() {
+    // Sepete ekle butonu
+    $('.add-to-cart-btn').on('click', function() {
+        const productId = $(this).data('product-id');
+        const productName = $(this).data('product-name');
+        const $button = $(this);
+        
+        // Butonu devre dışı bırak
+        $button.prop('disabled', true);
+        $button.html('<i class="fas fa-spinner fa-spin me-2"></i>Ekleniyor...');
+        
+        $.ajax({
+            url: '{{ route("cart.add") }}',
+            method: 'POST',
+            data: {
+                product_id: productId,
+                quantity: 1,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(data) {
+                if (data.success) {
+                    // Başarılı mesajı göster
+                    $button.html('<i class="fas fa-check me-2"></i>Eklendi!');
+                    $button.removeClass('btn-success').addClass('btn-success');
+                    
+                    // Navbar'daki sepet sayacını güncelle
+                    updateCartCount(data.cart_count);
+                    
+                    // 2 saniye sonra butonu eski haline getir
+                    setTimeout(() => {
+                        $button.prop('disabled', false);
+                        $button.html('<i class="fas fa-cart-plus me-2"></i>Sepete Ekle');
+                    }, 2000);
+                    
+                    // Toast mesajı göster
+                    showToast('success', data.message);
+                } else {
+                    // Hata mesajı göster
+                    $button.prop('disabled', false);
+                    $button.html('<i class="fas fa-cart-plus me-2"></i>Sepete Ekle');
+                    showToast('error', data.message);
+                }
+            },
+            error: function() {
+                $button.prop('disabled', false);
+                $button.html('<i class="fas fa-cart-plus me-2"></i>Sepete Ekle');
+                showToast('error', 'Bir hata oluştu');
+            }
+        });
+    });
+});
+
+// Sepet sayacını güncelle
+function updateCartCount(count) {
+    const $cartCount = $('.cart-count');
+    if ($cartCount.length) {
+        $cartCount.text(count);
+        $cartCount.toggle(count > 0);
+    }
+}
+
+// Toast mesajı göster
+function showToast(type, message) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+    
+    const toast = $(`
+        <div class="alert ${alertClass} position-fixed" style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+            <i class="fas ${iconClass} me-2"></i>${message}
+        </div>
+    `);
+    
+    $('body').append(toast);
+    
+    // 3 saniye sonra kaldır
+    setTimeout(() => {
+        toast.fadeOut(() => toast.remove());
+    }, 3000);
+}
+
+// Favori toggle fonksiyonu
+function toggleFavorite(productKod, button) {
+    const $button = $(button);
+    const $icon = $button.find('i');
+    
+    // Loading state
+    $button.prop('disabled', true);
+    $icon.removeClass('fas fa-heart').addClass('fas fa-spinner fa-spin');
+    
+    $.ajax({
+        url: '{{ route("favorites.toggle") }}',
+        method: 'POST',
+        data: {
+            product_kod: productKod
+        },
+        success: function(response) {
+            if (response.success) {
+                if (response.is_favorite) {
+                    $button.removeClass('btn-outline-danger').addClass('btn-danger');
+                    $button.html('<i class="fas fa-heart me-2"></i>Favorilerden Çıkar');
+                    showToast('success', response.message);
+                } else {
+                    $button.removeClass('btn-danger').addClass('btn-outline-danger');
+                    $button.html('<i class="fas fa-heart me-2"></i>Favorilere Ekle');
+                    showToast('info', response.message);
+                }
+                
+                // Favori sayacını güncelle
+                updateFavoriteCount();
+            }
+        },
+        error: function(xhr) {
+            const response = xhr.responseJSON;
+            showToast('error', response?.message || 'Bir hata oluştu.');
+            $icon.removeClass('fa-spinner fa-spin').addClass('fas fa-heart');
+        },
+        complete: function() {
+            $button.prop('disabled', false);
+        }
+    });
+}
+
+// Favori sayacını güncelle
+function updateFavoriteCount() {
+    $.ajax({
+        url: '{{ route("favorites.count") }}',
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                const $favoriteCount = $('.favorite-count');
+                if ($favoriteCount.length) {
+                    $favoriteCount.text(response.count);
+                    $favoriteCount.toggle(response.count > 0);
+                }
+            }
+        }
+    });
+}
+
+</script>
 @endsection
