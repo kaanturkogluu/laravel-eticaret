@@ -19,13 +19,23 @@ class HomeController extends Controller
         // Kampanyaları getir
         $campaigns = Campaign::active()->campaigns()->ordered()->limit(3)->get();
         
-        // Öne çıkan ürünler (stokta olan, fiyatı düşük olanlar)
+        // Öne çıkan ürünler (admin tarafından seçilenler)
         $featuredProducts = Product::active()
             ->inStock()
+            ->featured()
             ->with(['images'])
-            ->orderByRaw('LEAST(COALESCE(fiyat_ozel, 999999), COALESCE(fiyat_bayi, 999999), COALESCE(fiyat_sk, 999999)) ASC')
             ->limit(12)
             ->get();
+            
+        // Eğer öne çıkan ürün yoksa, fiyatı düşük olanları göster
+        if ($featuredProducts->isEmpty()) {
+            $featuredProducts = Product::active()
+                ->inStock()
+                ->with(['images'])
+                ->orderByRaw('LEAST(COALESCE(fiyat_ozel, 999999), COALESCE(fiyat_bayi, 999999), COALESCE(fiyat_sk, 999999)) ASC')
+                ->limit(12)
+                ->get();
+        }
 
         // Yeni ürünler (son eklenenler)
         $newProducts = Product::active()

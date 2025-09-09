@@ -578,6 +578,51 @@
 </section>
 
 <div class="container-fluid px-0">
+    <!-- Banner Carousel -->
+    @if($banners->count() > 0)
+    <section class="mb-4 py-4">
+        <div class="container">
+            <div id="bannerCarousel" class="carousel slide banner-carousel" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+                    @foreach($banners as $index => $banner)
+                        <button type="button" data-bs-target="#bannerCarousel" data-bs-slide-to="{{ $index }}" 
+                                class="{{ $index === 0 ? 'active' : '' }}" aria-current="{{ $index === 0 ? 'true' : 'false' }}" 
+                                aria-label="Slide {{ $index + 1 }}"></button>
+                    @endforeach
+                </div>
+                <div class="carousel-inner">
+                    @foreach($banners as $index => $banner)
+                        <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
+                            @if($banner->image_url)
+                                <img src="{{ $banner->image_url }}" class="d-block w-100" alt="{{ $banner->title }}">
+                            @endif
+                            <div class="carousel-caption d-none d-md-block">
+                                <h5>{{ $banner->title }}</h5>
+                                @if($banner->description)
+                                    <p>{{ $banner->description }}</p>
+                                @endif
+                                @if($banner->link_url)
+                                    <a href="{{ $banner->link_url }}" class="btn btn-warning btn-lg">Detayları Gör</a>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                @if($banners->count() > 1)
+                    <button class="carousel-control-prev" type="button" data-bs-target="#bannerCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#bannerCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                @endif
+            </div>
+        </div>
+    </section>
+    @endif
+
     <!-- Kampanyalar -->
     @if($campaigns->count() > 0)
     <section class="mb-4 py-4">

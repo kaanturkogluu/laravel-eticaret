@@ -11,7 +11,7 @@ class Product extends Model
         'kod', 'ad', 'miktar', 'fiyat_sk', 'fiyat_bayi', 'fiyat_ozel',
         'doviz', 'marka', 'kategori', 'ana_grup_kod', 'ana_grup_ad',
         'alt_grup_kod', 'alt_grup_ad', 'ana_resim', 'barkod', 'aciklama',
-        'detay', 'desi', 'kdv', 'is_active', 'last_updated'
+        'detay', 'desi', 'kdv', 'is_active', 'featured', 'featured_order', 'last_updated'
     ];
 
     protected $casts = [
@@ -20,6 +20,8 @@ class Product extends Model
         'fiyat_ozel' => 'decimal:2',
         'desi' => 'decimal:2',
         'is_active' => 'boolean',
+        'featured' => 'boolean',
+        'featured_order' => 'integer',
         'last_updated' => 'datetime',
     ];
 
@@ -83,6 +85,14 @@ class Product extends Model
     public function scopeByCategory($query, $category)
     {
         return $query->where('kategori', $category);
+    }
+
+    /**
+     * Öne çıkan ürünleri getir
+     */
+    public function scopeFeatured($query)
+    {
+        return $query->where('featured', true)->orderBy('featured_order', 'asc');
     }
 
 

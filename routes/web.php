@@ -23,6 +23,11 @@ use App\Http\Controllers\Customer\CargoTrackingController as CustomerCargoTracki
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\CartCouponController;
+use App\Http\Controllers\CampaignController;
+use App\Http\Controllers\Admin\CampaignController as AdminCampaignController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
+use App\Http\Controllers\Customer\ReportController as CustomerReportController;
+use App\Http\Controllers\Admin\FeaturedProductsController;
 
 // Ana sayfa
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -95,6 +100,18 @@ Route::prefix('customer')->name('customer.')->middleware('auth')->group(function
     // Kargo takip
     Route::get('/cargo-tracking', [CustomerCargoTrackingController::class, 'myOrders'])->name('cargo-tracking.orders');
     Route::get('/cargo-tracking/order/{orderId}', [CustomerCargoTrackingController::class, 'orderTracking'])->name('cargo-tracking.order');
+    
+    // Raporlama
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/dashboard', [CustomerReportController::class, 'dashboard'])->name('dashboard');
+        Route::get('/orders', [CustomerReportController::class, 'orders'])->name('orders');
+        Route::get('/spending', [CustomerReportController::class, 'spending'])->name('spending');
+        Route::get('/favorites', [CustomerReportController::class, 'favorites'])->name('favorites');
+        
+        // API endpoints
+        Route::get('/api/dashboard', [CustomerReportController::class, 'apiDashboard'])->name('api.dashboard');
+        Route::get('/api/monthly-trend', [CustomerReportController::class, 'apiMonthlyTrend'])->name('api.monthly-trend');
+    });
 });
 
 // Favoriler (sadece giriş yapmış kullanıcılar)
@@ -109,6 +126,12 @@ Route::prefix('favorites')->name('favorites.')->middleware('auth')->group(functi
 
 // Kargo takip (public)
 Route::get('/cargo-tracking', [CustomerCargoTrackingController::class, 'track'])->name('cargo-tracking.track');
+
+// Kampanyalar (public)
+Route::get('/campaigns', [CampaignController::class, 'index'])->name('campaigns.index');
+Route::get('/campaigns/{campaign}', [CampaignController::class, 'show'])->name('campaigns.show');
+Route::get('/api/campaigns/banners', [CampaignController::class, 'getBanners'])->name('campaigns.banners');
+Route::get('/api/campaigns/active', [CampaignController::class, 'getActiveCampaigns'])->name('campaigns.active');
 
 // Admin paneli - sadece admin kullanıcılar
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
@@ -177,4 +200,35 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/coupons/{coupon}/usage-history', [CouponController::class, 'usageHistory'])->name('coupons.usage-history');
     Route::post('/coupons/{coupon}/toggle-status', [CouponController::class, 'toggleStatus'])->name('coupons.toggle-status');
     Route::post('/coupons/generate-code', [CouponController::class, 'generateCode'])->name('coupons.generate-code');
+    
+    // Kampanya Yönetimi
+    Route::resource('campaigns', AdminCampaignController::class);
+    Route::post('/campaigns/{campaign}/toggle-status', [AdminCampaignController::class, 'toggleStatus'])->name('campaigns.toggle-status');
+    Route::post('/campaigns/update-order', [AdminCampaignController::class, 'updateOrder'])->name('campaigns.update-order');
+    
+    // Öne Çıkan Ürünler Yönetimi
+    Route::prefix('featured-products')->name('featured-products.')->group(function () {
+        Route::get('/', [FeaturedProductsController::class, 'index'])->name('index');
+        Route::post('/add', [FeaturedProductsController::class, 'add'])->name('add');
+        Route::delete('/remove/{id}', [FeaturedProductsController::class, 'remove'])->name('remove');
+        Route::post('/update-order', [FeaturedProductsController::class, 'updateOrder'])->name('update-order');
+        Route::post('/reset-order', [FeaturedProductsController::class, 'resetOrder'])->name('reset-order');
+    });
+    
+    // Raporlama
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/dashboard', [AdminReportController::class, 'dashboard'])->name('dashboard');
+        Route::get('/sales', [AdminReportController::class, 'sales'])->name('sales');
+        Route::get('/products', [AdminReportController::class, 'products'])->name('products');
+        Route::get('/customers', [AdminReportController::class, 'customers'])->name('customers');
+        Route::get('/cargo', [AdminReportController::class, 'cargo'])->name('cargo');
+        Route::get('/coupons', [AdminReportController::class, 'coupons'])->name('coupons');
+        Route::get('/export', [AdminReportController::class, 'export'])->name('export');
+        
+        // API endpoints
+        Route::get('/api/dashboard', [AdminReportController::class, 'apiDashboard'])->name('api.dashboard');
+        Route::get('/api/sales-trend', [AdminReportController::class, 'apiSalesTrend'])->name('api.sales-trend');
+        Route::get('/api/top-products', [AdminReportController::class, 'apiTopProducts'])->name('api.top-products');
+        Route::get('/api/top-customers', [AdminReportController::class, 'apiTopCustomers'])->name('api.top-customers');
+    });
 });

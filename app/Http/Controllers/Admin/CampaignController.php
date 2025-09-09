@@ -41,12 +41,17 @@ class CampaignController extends Controller
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after:start_date',
             'sort_order' => 'nullable|integer|min:0',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'discount_type' => 'nullable|in:percentage,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'minimum_amount' => 'nullable|numeric|min:0',
+            'maximum_discount' => 'nullable|numeric|min:0'
         ]);
 
         $data = $request->only([
             'title', 'description', 'type', 'link_url', 
-            'start_date', 'end_date', 'sort_order', 'is_active'
+            'start_date', 'end_date', 'sort_order', 'is_active',
+            'discount_type', 'discount_value', 'minimum_amount', 'maximum_discount'
         ]);
 
         // Resim yükleme
@@ -89,12 +94,17 @@ class CampaignController extends Controller
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after:start_date',
             'sort_order' => 'nullable|integer|min:0',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'discount_type' => 'nullable|in:percentage,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'minimum_amount' => 'nullable|numeric|min:0',
+            'maximum_discount' => 'nullable|numeric|min:0'
         ]);
 
         $data = $request->only([
             'title', 'description', 'type', 'link_url', 
-            'start_date', 'end_date', 'sort_order', 'is_active'
+            'start_date', 'end_date', 'sort_order', 'is_active',
+            'discount_type', 'discount_value', 'minimum_amount', 'maximum_discount'
         ]);
 
         // Resim yükleme
