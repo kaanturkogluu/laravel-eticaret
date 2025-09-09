@@ -163,4 +163,60 @@ class Product extends Model
     {
         return $this->favoritedBy()->where('user_id', $userId)->exists();
     }
+
+    /**
+     * Fiyat değişikliği geçmişi ilişkisi
+     */
+    public function priceHistory()
+    {
+        return $this->hasMany(\App\Models\ProductPriceHistory::class, 'product_kod', 'kod');
+    }
+
+    /**
+     * Ürün güncelleme işleminde fiyat değişikliğini kontrol et
+     */
+    public function updateWithPriceCheck(array $data)
+    {
+        // Mevcut fiyatları sakla
+        $oldPrices = [
+            'fiyat_sk' => $this->fiyat_sk,
+            'fiyat_bayi' => $this->fiyat_bayi,
+            'fiyat_ozel' => $this->fiyat_ozel,
+        ];
+
+        // Ürünü güncelle
+        $this->update($data);
+
+        // Yeni fiyatları al
+        $newPrices = [
+            'fiyat_sk' => $this->fresh()->fiyat_sk,
+            'fiyat_bayi' => $this->fresh()->fiyat_bayi,
+            'fiyat_ozel' => $this->fresh()->fiyat_ozel,
+        ];
+
+        // Fiyat değişikliği var mı kontrol et
+        $priceChanged = false;
+        foreach (['fiyat_sk', 'fiyat_bayi', 'fiyat_ozel'] as $priceField) {
+            if (($oldPrices[$priceField] ?? 0) != ($newPrices[$priceField] ?? 0)) {
+                $priceChanged = true;
+                break;
+            }
+        }
+
+        // Eğer fiyat değiştiyse, bildirim servisini çağır
+        if ($priceChanged) {
+            try {
+                $priceDropService = app(\App\Services\PriceDropNotificationService::class);
+                $priceDropService->checkAndNotifyPriceDrop($this, $oldPrices, $newPrices);
+            } catch (\Exception $e) {
+                \Log::error('Fiyat değişikliği bildirimi hatası: ' . $e->getMessage(), [
+                    'product_kod' => $this->kod,
+                    'old_prices' => $oldPrices,
+                    'new_prices' => $newPrices,
+                ]);
+            }
+        }
+
+        return $this;
+    }
 }

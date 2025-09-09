@@ -76,7 +76,7 @@ class XMLImportController extends Controller
 
                 if ($existingProduct) {
                     if ($request->update_mode === 'replace') {
-                        $existingProduct->update($productData);
+                        $existingProduct->updateWithPriceCheck($productData);
                         $updatedCount++;
                         \Log::info('Ürün güncellendi (replace)', ['kod' => $productData['kod']]);
                         
@@ -94,7 +94,7 @@ class XMLImportController extends Controller
                             }
                         }
                         if (!empty($updateData)) {
-                            $existingProduct->update($updateData);
+                            $existingProduct->updateWithPriceCheck($updateData);
                             $updatedCount++;
                             \Log::info('Ürün güncellendi (merge)', ['kod' => $productData['kod'], 'updated_fields' => array_keys($updateData)]);
                         } else {

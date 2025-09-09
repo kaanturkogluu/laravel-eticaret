@@ -31,11 +31,11 @@
 @foreach($order->items as $item)
 <div class="order-item">
     <div>
-        <strong>{{ $item->product->name }}</strong><br>
+        <strong>{{ $item->product->name ?? $item->product_name ?? 'Ürün' }}</strong><br>
         <small>Miktar: {{ $item->quantity }}</small>
     </div>
     <div>
-        {{ number_format($item->price * $item->quantity, 2) }} {{ $order->currency }}
+        {{ number_format($item->price * $item->quantity, 2) }} {{ $order->currency ?? 'TL' }}
     </div>
 </div>
 @endforeach

@@ -43,7 +43,7 @@ class CargoNotificationMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.cargo-notification',
+            view: 'emails.cargo-notification-simple',
             with: [
                 'order' => $this->order,
                 'cargoTracking' => $this->cargoTracking,

@@ -148,8 +148,8 @@ class GunesXmlService
                     $existingProduct = \App\Models\Product::where('kod', $productData['kod'])->first();
 
                     if ($existingProduct) {
-                        // Mevcut ürünü güncelle
-                        $existingProduct->update($productData);
+                        // Mevcut ürünü fiyat kontrolü ile güncelle
+                        $existingProduct->updateWithPriceCheck($productData);
                         $updatedCount++;
                     } else {
                         // Yeni ürün oluştur

@@ -19,11 +19,11 @@
     </div>
     <div class="order-item">
         <strong>Ödeme Tutarı:</strong>
-        <span>{{ number_format($payment->amount, 2) }} {{ $payment->currency }}</span>
+        <span>{{ number_format($payment->amount, 2) }} {{ $payment->currency ?? 'TL' }}</span>
     </div>
     <div class="order-item">
         <strong>Ödeme Yöntemi:</strong>
-        <span>{{ $payment->paymentProvider->name }}</span>
+        <span>{{ $payment->paymentProvider->name ?? $payment->payment_method ?? 'Ödeme Yöntemi' }}</span>
     </div>
     <div class="order-item">
         <strong>İşlem Numarası:</strong>
@@ -40,17 +40,17 @@
     @foreach($order->items as $item)
     <div class="order-item">
         <div>
-            <strong>{{ $item->product->name }}</strong><br>
+            <strong>{{ $item->product->name ?? $item->product_name ?? 'Ürün' }}</strong><br>
             <small>Miktar: {{ $item->quantity }}</small>
         </div>
         <div>
-            {{ number_format($item->price * $item->quantity, 2) }} {{ $order->currency }}
+            {{ number_format($item->price * $item->quantity, 2) }} {{ $order->currency ?? 'TL' }}
         </div>
     </div>
     @endforeach
     <div class="order-item" style="border-top: 2px solid #007bff; font-weight: bold;">
         <strong>Toplam:</strong>
-        <span>{{ number_format($order->total_amount, 2) }} {{ $order->currency }}</span>
+        <span>{{ number_format($order->total_amount, 2) }} {{ $order->currency ?? 'TL' }}</span>
     </div>
 </div>
 

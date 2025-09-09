@@ -12,6 +12,68 @@ use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
+    /**
+     * Ürün listesi
+     */
+    public function index(Request $request)
+    {
+        $query = Product::with(['images']);
+
+        // Arama
+        if ($request->filled('search')) {
+            $query->search($request->search);
+        }
+
+        // Marka filtresi
+        if ($request->filled('brand')) {
+            $query->byBrand($request->brand);
+        }
+
+        // Kategori filtresi
+        if ($request->filled('category')) {
+            $query->byCategory($request->category);
+        }
+
+        // Durum filtresi
+        if ($request->filled('status')) {
+            if ($request->status === 'active') {
+                $query->active();
+            } elseif ($request->status === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+
+        // Sıralama
+        $sortBy = $request->get('sort', 'created_at');
+        $sortDirection = $request->get('direction', 'desc');
+        $query->orderBy($sortBy, $sortDirection);
+
+        $products = $query->paginate(20);
+
+        // Filtreler için veriler
+        $brands = Product::distinct()->pluck('marka')->filter()->sort()->values();
+        $categories = Product::distinct()->pluck('kategori')->filter()->sort()->values();
+
+        return view('admin.products.index', compact('products', 'brands', 'categories'));
+    }
+
+    /**
+     * Yeni ürün formu
+     */
+    public function create()
+    {
+        return view('admin.products.create');
+    }
+
+    /**
+     * Ürün düzenleme formu
+     */
+    public function edit(Product $product)
+    {
+        $product->load(['images', 'specifications']);
+        return view('admin.products.edit', compact('product'));
+    }
+
     public function store(Request $request)
     {
         \Log::info('Manuel ürün ekleme başladı', [
@@ -93,13 +155,16 @@ class ProductController extends Controller
             'marka' => 'nullable|string|max:255',
             'kategori' => 'nullable|string|max:255',
             'fiyat_ozel' => 'required|numeric|min:0',
+            'fiyat_bayi' => 'nullable|numeric|min:0',
+            'fiyat_sk' => 'nullable|numeric|min:0',
             'miktar' => 'required|integer|min:0',
             'doviz' => 'required|string|in:TL,USD,EUR',
             'aciklama' => 'nullable|string',
             'is_active' => 'boolean'
         ]);
 
-        $product->update($request->all());
+        // Fiyat kontrolü ile güncelle
+        $product->updateWithPriceCheck($request->all());
 
         return redirect()->back()->with('success', 'Ürün başarıyla güncellendi!');
     }
