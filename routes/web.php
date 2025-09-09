@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CartController;
@@ -35,26 +37,12 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // Ürün sayfaları
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/product/{kod}', [ProductController::class, 'show'])->name('products.show');
-Route::get('/api/products', [ProductController::class, 'api'])->name('products.api');
+Route::get('/api/products', [ProductController::class, 'api'])->middleware('custom.throttle:api,100,1')->name('products.api'); // 100 istek, 1 dakika
 
-// Sepet işlemleri
-Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-Route::get('/cart/count', [CartController::class, 'getCount'])->name('cart.count');
-Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
-Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
-Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
 
-// Kupon işlemleri
-Route::prefix('cart/coupon')->name('cart.coupon.')->group(function () {
-    Route::post('/apply', [CartCouponController::class, 'apply'])->name('apply');
-    Route::post('/remove', [CartCouponController::class, 'remove'])->name('remove');
-    Route::get('/applied', [CartCouponController::class, 'getAppliedCoupon'])->name('applied');
-    Route::post('/validate', [CartCouponController::class, 'validateCoupon'])->name('validate');
-});
 
-// Checkout işlemleri
-Route::middleware('auth')->group(function () {
+// Checkout işlemleri (e-posta doğrulama gerekli)
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
     
@@ -64,34 +52,67 @@ Route::middleware('auth')->group(function () {
     Route::post('/orders/{order}/delivered', [OrderController::class, 'markAsDelivered'])->name('orders.delivered');
 });
 
+// Sepet işlemleri (e-posta doğrulama gerekmez)
+Route::middleware('auth')->group(function () {
+    Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+    Route::get('/cart/count', [CartController::class, 'getCount'])->name('cart.count');
+    Route::post('/cart/add', [CartController::class, 'add'])->middleware('custom.throttle:cart-add,20,1')->name('cart.add'); // 20 istek, 1 dakika
+    Route::post('/cart/remove', [CartController::class, 'remove'])->middleware('custom.throttle:cart-remove,20,1')->name('cart.remove'); // 20 istek, 1 dakika
+    Route::post('/cart/update', [CartController::class, 'update'])->middleware('custom.throttle:cart-update,20,1')->name('cart.update'); // 20 istek, 1 dakika
+    Route::post('/cart/clear', [CartController::class, 'clear'])->middleware('custom.throttle:cart-clear,5,1')->name('cart.clear'); // 5 istek, 1 dakika
+    
+    // Kupon işlemleri
+    Route::prefix('cart/coupon')->name('cart.coupon.')->group(function () {
+        Route::post('/apply', [CartCouponController::class, 'apply'])->middleware('custom.throttle:coupon-apply,10,1')->name('apply'); // 10 istek, 1 dakika
+        Route::post('/remove', [CartCouponController::class, 'remove'])->middleware('custom.throttle:coupon-remove,10,1')->name('remove'); // 10 istek, 1 dakika
+        Route::get('/applied', [CartCouponController::class, 'getAppliedCoupon'])->name('applied');
+        Route::post('/validate', [CartCouponController::class, 'validateCoupon'])->middleware('custom.throttle:coupon-validate,20,1')->name('validate'); // 20 istek, 1 dakika
+    });
+});
+
 // Payment işlemleri
 Route::prefix('payment')->name('payment.')->group(function () {
     // Public payment routes
-    Route::post('/initiate', [PaymentController::class, 'initiate'])->name('initiate');
+    Route::post('/initiate', [PaymentController::class, 'initiate'])->middleware('custom.throttle:payment-initiate,5,1')->name('initiate'); // 5 istek, 1 dakika
     Route::get('/providers', [PaymentController::class, 'getProviders'])->name('providers');
     Route::get('/success', [PaymentController::class, 'success'])->name('success');
     Route::get('/failure', [PaymentController::class, 'failure'])->name('failure');
     Route::get('/cancel', [PaymentController::class, 'cancel'])->name('cancel');
     
-    // Callback ve webhook routes
+    // Callback ve webhook routes (rate limiting yok - external servislerden gelir)
     Route::post('/callback/{provider}', [PaymentController::class, 'callback'])->name('callback');
     Route::post('/webhook/{provider}', [PaymentController::class, 'webhook'])->name('webhook');
     
     // Status check (authenticated)
     Route::middleware('auth')->group(function () {
-        Route::post('/check-status', [PaymentController::class, 'checkStatus'])->name('check-status');
+        Route::post('/check-status', [PaymentController::class, 'checkStatus'])->middleware('custom.throttle:payment-status,10,1')->name('check-status'); // 10 istek, 1 dakika
     });
 });
 
 // Auth routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login']);
+Route::post('/login', [LoginController::class, 'login'])->middleware('custom.throttle:login,5,15'); // 5 deneme, 15 dakika
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-Route::post('/register', [RegisterController::class, 'register']);
+Route::post('/register', [RegisterController::class, 'register'])->middleware('custom.throttle:register,3,60'); // 3 deneme, 60 dakika
 
-// Müşteri paneli
-Route::prefix('customer')->name('customer.')->middleware('auth')->group(function () {
+// E-posta doğrulama routes
+Route::get('/email/verify', function () {
+    return view('auth.verify-email');
+})->middleware(['auth'])->name('verification.notice');
+
+Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+    $request->fulfill();
+    return redirect()->route('home')->with('success', 'E-posta adresiniz başarıyla doğrulandı!');
+})->middleware(['auth', 'signed'])->name('verification.verify');
+
+Route::post('/email/verification-notification', function (Request $request) {
+    $request->user()->sendEmailVerificationNotification();
+    return back()->with('message', 'Doğrulama bağlantısı gönderildi!');
+})->middleware(['auth', 'custom.throttle:email-verification,3,5'])->name('verification.send'); // 3 deneme, 5 dakika
+
+// Müşteri paneli (e-posta doğrulama gerekli)
+Route::prefix('customer')->name('customer.')->middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [CustomerController::class, 'dashboard'])->name('dashboard');
     Route::get('/profile', [CustomerController::class, 'profile'])->name('profile');
     Route::put('/profile', [CustomerController::class, 'updateProfile'])->name('profile.update');
@@ -114,8 +135,8 @@ Route::prefix('customer')->name('customer.')->middleware('auth')->group(function
     });
 });
 
-// Favoriler (sadece giriş yapmış kullanıcılar)
-Route::prefix('favorites')->name('favorites.')->middleware('auth')->group(function () {
+// Favoriler (e-posta doğrulama gerekli)
+Route::prefix('favorites')->name('favorites.')->middleware(['auth', 'verified'])->group(function () {
     Route::get('/', [FavoriteController::class, 'index'])->name('index');
     Route::post('/add', [FavoriteController::class, 'add'])->name('add');
     Route::post('/remove', [FavoriteController::class, 'remove'])->name('remove');

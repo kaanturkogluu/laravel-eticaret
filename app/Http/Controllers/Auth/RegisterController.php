@@ -40,7 +40,8 @@ class RegisterController extends Controller
             'is_admin' => false,
         ]);
 
-        Auth::login($user);
+        // E-posta doğrulama e-postası gönder
+        $user->sendEmailVerificationNotification();
 
         // Hoş geldin maili gönder
         try {
@@ -49,6 +50,6 @@ class RegisterController extends Controller
             \Log::error('Welcome mail failed: ' . $e->getMessage());
         }
 
-        return redirect()->route('home')->with('success', 'Hesabınız başarıyla oluşturuldu!');
+        return redirect()->route('verification.notice')->with('success', 'Kayıt başarılı! E-posta adresinizi doğrulamak için gönderilen e-postadaki bağlantıya tıklayın.');
     }
 }
