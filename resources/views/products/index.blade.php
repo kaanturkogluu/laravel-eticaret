@@ -123,17 +123,19 @@
             @foreach($products as $product)
                     <div class="col-md-6 col-lg-4 mb-4">
                         <div class="card product-card h-100">
-                            <div class="position-relative">
-                                @if($product->images->count() > 0)
-                                    <img src="{{ $product->images->first()->resim_url }}" 
-                                         class="card-img-top product-image" 
-                                         alt="{{ $product->ad }}"
-                                         onerror="handleImageError(this)">
-                                @else
-                                    <img src="{{ asset('images/no-product-image.svg') }}" 
-                                         class="card-img-top product-image" 
-                                         alt="{{ $product->ad }}">
-                                @endif
+                            <div class="position-relative overflow-hidden">
+                                <a href="{{ route('products.show', $product->kod) }}" class="d-block">
+                                    @if($product->images->count() > 0)
+                                        <img src="{{ $product->images->first()->resim_url }}" 
+                                             class="card-img-top product-image" 
+                                             alt="{{ $product->ad }}"
+                                             onerror="handleImageError(this)">
+                                    @else
+                                        <img src="{{ asset('images/no-product-image.svg') }}" 
+                                             class="card-img-top product-image" 
+                                             alt="{{ $product->ad }}">
+                                    @endif
+                                </a>
                                 
                                 <!-- Stok Badge -->
                                 @if($product->miktar >= 2)
@@ -177,7 +179,15 @@
                                 </div>
                                 
                                 <div class="price mb-3">
-                                    {{ $product->formatted_price }}
+                                    <div class="fw-bold text-success fs-5">
+                                        {{ $product->formatted_price_with_profit_in_try }}
+                                        Y
+                                    </div>
+                                    @if($product->doviz !== 'TRY')
+                                        <small class="text-muted">
+                                            ({{ $product->formatted_price_with_profit }})
+                                        </small>
+                                    @endif
                                 </div>
                                 
                                 <div class="mt-auto">

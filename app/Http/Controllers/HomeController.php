@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Campaign;
+use App\Models\Slider;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -13,8 +14,8 @@ class HomeController extends Controller
      */
     public function index()
     {
-        // Banner'ları getir
-        $banners = Campaign::active()->banners()->ordered()->limit(5)->get();
+        // Slider'ları getir
+        $sliders = Slider::active()->ordered()->get();
         
         // Kampanyaları getir
         $campaigns = Campaign::active()->campaigns()->ordered()->limit(3)->get();
@@ -82,7 +83,7 @@ class HomeController extends Controller
         ];
 
         return view('home', compact(
-            'banners', 
+            'sliders',
             'campaigns', 
             'featuredProducts', 
             'newProducts', 

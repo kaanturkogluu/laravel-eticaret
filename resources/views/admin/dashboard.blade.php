@@ -20,8 +20,8 @@
                         </button>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <a href="{{ route('admin.xml-import') }}" class="btn btn-success w-100">
-                            <i class="fas fa-file-import me-2"></i>XML İçe Aktar
+                        <a href="{{ route('admin.products.create') }}" class="btn btn-success w-100">
+                            <i class="fas fa-plus me-2"></i>Yeni Ürün Ekle
                         </a>
                     </div>
                     <div class="col-md-3 mb-3">
@@ -99,39 +99,66 @@
     </div>
 </div>
 
-<!-- Ek Hızlı İşlemler -->
+<!-- XML İşlemleri -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="fas fa-tools me-2"></i>Ek İşlemler
+                    <i class="fas fa-file-code me-2"></i>XML İşlemleri
                 </h5>
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-4 mb-3">
+                        <a href="{{ route('admin.xml-import') }}" class="btn btn-primary w-100">
+                            <i class="fas fa-file-import me-2"></i>XML İçe Aktar
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
                         <form method="POST" action="{{ route('admin.xml-import.liste') }}" class="d-inline w-100">
                             @csrf
                             <button type="submit" class="btn btn-success w-100" 
                                     onclick="return confirm('Liste.xml import edilecek. Devam etmek istiyor musunuz?')">
-                                <i class="fas fa-file-code me-2"></i>Liste.xml Import
+                                <i class="fas fa-play me-2"></i>Liste.xml Import
                             </button>
                         </form>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-4 mb-3">
                         <a href="{{ route('admin.xml-history') }}" class="btn btn-dark w-100">
                             <i class="fas fa-history me-2"></i>XML Geçmişi
                         </a>
                     </div>
-                    <div class="col-md-3 mb-3">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Diğer İşlemler -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-tools me-2"></i>Diğer İşlemler
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
                         <a href="{{ route('cart.index') }}" class="btn btn-secondary w-100">
                             <i class="fas fa-shopping-cart me-2"></i>Sepet Yönetimi
                         </a>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-4 mb-3">
                         <button class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#stockControlModal">
                             <i class="fas fa-boxes me-2"></i>Stok Kontrolü
+                        </button>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <button class="btn btn-info w-100" data-bs-toggle="modal" data-bs-target="#marketplaceModal">
+                            <i class="fas fa-store me-2"></i>Pazaryeri Entegrasyonu
                         </button>
                     </div>
                 </div>

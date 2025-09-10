@@ -30,4 +30,46 @@ class ProductImage extends Model
     {
         return $this->resim_url;
     }
+
+    /**
+     * Optimized image URL for different sizes
+     */
+    public function getOptimizedUrl($size = 'large')
+    {
+        $imageOptimizationService = app(\App\Services\ImageOptimizationService::class);
+        return $imageOptimizationService->getOptimizedImageUrl($this->resim_url, $size);
+    }
+
+    /**
+     * Generate responsive image HTML
+     */
+    public function getResponsiveImageHtml($alt = '', $attributes = [])
+    {
+        $imageOptimizationService = app(\App\Services\ImageOptimizationService::class);
+        return $imageOptimizationService->generateResponsiveImageHtml($this->resim_url, $alt, $attributes);
+    }
+
+    /**
+     * Get thumbnail URL
+     */
+    public function getThumbnailUrlAttribute()
+    {
+        return $this->getOptimizedUrl('thumbnail');
+    }
+
+    /**
+     * Get medium size URL
+     */
+    public function getMediumUrlAttribute()
+    {
+        return $this->getOptimizedUrl('medium');
+    }
+
+    /**
+     * Get large size URL
+     */
+    public function getLargeUrlAttribute()
+    {
+        return $this->getOptimizedUrl('large');
+    }
 }

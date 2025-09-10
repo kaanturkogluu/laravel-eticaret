@@ -133,7 +133,7 @@ class GunesXmlService
                         'fiyat_bayi' => (float) ($urun->Fiyat_Bayi ?? 0),
                         'fiyat_sk' => (float) ($urun->Fiyat_SK ?? 0),
                         'miktar' => (int) ($urun->Miktar ?? 0),
-                        'doviz' => (string) ($urun->Doviz ?? 'TL'),
+                        'doviz' => $this->normalizeCurrency((string) ($urun->Doviz ?? '')),
                         'aciklama' => (string) ($urun->Aciklama ?? ''),
                         'is_active' => true,
                         'last_updated' => now()
@@ -321,5 +321,31 @@ class GunesXmlService
                 'error' => $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Para birimini normalize et - boş veya geçersiz değerler için TL döndür
+     */
+    private function normalizeCurrency(string $currency): string
+    {
+        // Boş veya sadece boşluk karakteri içeren değerler
+        if (empty(trim($currency))) {
+            return 'TL';
+        }
+
+        // Geçerli para birimlerini kontrol et
+        $validCurrencies = ['TL', 'USD', 'EUR'];
+        $normalizedCurrency = strtoupper(trim($currency));
+
+        // Eğer geçerli bir para birimi değilse TL döndür
+        if (!in_array($normalizedCurrency, $validCurrencies)) {
+            Log::warning('Geçersiz para birimi, TL olarak ayarlandı', [
+                'original_currency' => $currency,
+                'normalized_currency' => $normalizedCurrency
+            ]);
+            return 'TL';
+        }
+
+        return $normalizedCurrency;
     }
 }

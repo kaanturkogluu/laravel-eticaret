@@ -73,12 +73,14 @@
                                         <!-- Fiyat -->
                                         <div class="col-md-2">
                                             <div class="text-end">
-                                                <div class="fw-bold text-primary">
-                                                    {{ $item->formatted_unit_price }}
+                                                <div class="fw-bold text-success">
+                                                    {{ $item->formatted_total_price_with_profit_in_try }}
                                                 </div>
-                                                <div class="text-muted small">
-                                                    Toplam: {{ $item->formatted_total_price }}
-                                                </div>
+                                                @if($item->product->doviz !== 'TRY')
+                                                    <div class="text-muted small">
+                                                        ({{ $item->formatted_total_price_with_profit }})
+                                                    </div>
+                                                @endif
                                             </div>
                                         </div>
 
@@ -149,7 +151,7 @@
                                         @endphp
                                         <div class="d-flex justify-content-between mb-2">
                                             <span>{{ $currency }} Toplam:</span>
-                                            <span>{{ number_format($currencyTotal, 2) }} {{ $currencySymbol }}</span>
+                                            <span>{{ number_format($currencyTotal, 2) }} {{ $currencySymbol }} +KDV</span>
                                         </div>
                                     @endforeach
                                     
@@ -157,7 +159,7 @@
                                     
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>TL Karşılığı Ara Toplam:</span>
-                                        <span id="subtotalAmount">{{ number_format($cartTotalInTry, 2) }} ₺</span>
+                                        <span id="subtotalAmount">{{ number_format($cartTotalWithProfitInTry, 2) }} ₺ +KDV</span>
                                     </div>
                                     <div class="d-flex justify-content-between mb-2" id="discountRow" style="display: none;">
                                         <span class="text-success">İndirim:</span>
@@ -165,13 +167,13 @@
                                     </div>
                                     <div class="d-flex justify-content-between mb-3">
                                         <strong>TL Karşılığı Toplam:</strong>
-                                        <strong class="text-success" id="finalTotal">{{ number_format($cartTotalInTry, 2) }} ₺</strong>
+                                        <strong class="text-success" id="finalTotal">{{ number_format($cartTotalWithProfitInTry, 2) }} ₺ +KDV</strong>
                                     </div>
                                 @else
                                     {{-- Tek para birimi durumunda normal gösterim --}}
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>Ara Toplam:</span>
-                                        <span id="subtotalAmount">{{ number_format($cartTotal, 2) }} {{ $cartItems->first() ? $cartItems->first()->product->getCurrencySymbol() : '₺' }}</span>
+                                        <span id="subtotalAmount">{{ number_format($cartTotal, 2) }} {{ $cartItems->first() ? $cartItems->first()->product->getCurrencySymbol() : '₺' }} +KDV</span>
                                     </div>
                                     <div class="d-flex justify-content-between mb-2" id="discountRow" style="display: none;">
                                         <span class="text-success">İndirim:</span>
@@ -179,13 +181,13 @@
                                     </div>
                                     <div class="d-flex justify-content-between mb-3">
                                         <strong>Toplam:</strong>
-                                        <strong class="text-primary" id="finalTotal">{{ number_format($cartTotal, 2) }} {{ $cartItems->first() ? $cartItems->first()->product->getCurrencySymbol() : '₺' }}</strong>
+                                        <strong class="text-primary" id="finalTotal">{{ number_format($cartTotal, 2) }} {{ $cartItems->first() ? $cartItems->first()->product->getCurrencySymbol() : '₺' }} +KDV</strong>
                                     </div>
                                     
                                     @if($cartItems->first() && $cartItems->first()->product->doviz !== 'TRY')
                                     <div class="d-flex justify-content-between mb-3">
                                         <strong>TL Karşılığı:</strong>
-                                        <strong class="text-success" id="finalTotalTl">{{ number_format($cartTotalInTry, 2) }} ₺</strong>
+                                        <strong class="text-success" id="finalTotalTl">{{ number_format($cartTotalWithProfitInTry, 2) }} ₺ +KDV</strong>
                                     </div>
                                     @endif
                                 @endif

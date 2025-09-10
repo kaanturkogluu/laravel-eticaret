@@ -30,6 +30,7 @@ use App\Http\Controllers\Admin\CampaignController as AdminCampaignController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Customer\ReportController as CustomerReportController;
 use App\Http\Controllers\Admin\FeaturedProductsController;
+use App\Http\Controllers\Admin\SliderController;
 
 // Ana sayfa
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -168,6 +169,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::put('/products/{product}', [AdminProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{product}', [AdminProductController::class, 'destroy'])->name('products.destroy');
     
+    // Ürün resim silme
+    Route::delete('/product-images/{imageId}', [AdminProductController::class, 'deleteImage'])->name('product-images.destroy');
+    
     // XML İçe Aktarma
     Route::get('/xml-import', [XmlImportController::class, 'index'])->name('xml-import');
     Route::post('/xml-import', [XmlImportController::class, 'import'])->name('xml-import.upload');
@@ -255,4 +259,18 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
         Route::get('/api/top-products', [AdminReportController::class, 'apiTopProducts'])->name('api.top-products');
         Route::get('/api/top-customers', [AdminReportController::class, 'apiTopCustomers'])->name('api.top-customers');
     });
+    
+    // Slider Yönetimi
+    Route::resource('sliders', SliderController::class);
+    
+    // Genel Kar Ayarları
+    Route::get('/global-profit', [App\Http\Controllers\Admin\GlobalProfitController::class, 'index'])->name('global-profit.index');
+    Route::put('/global-profit', [App\Http\Controllers\Admin\GlobalProfitController::class, 'update'])->name('global-profit.update');
+    
+    // Kategori Kar Ayarları
+    Route::get('/category-profits/{categoryProfit}', [App\Http\Controllers\Admin\GlobalProfitController::class, 'showCategoryProfit'])->name('category-profits.show');
+    Route::post('/category-profits', [App\Http\Controllers\Admin\GlobalProfitController::class, 'storeCategoryProfit'])->name('category-profits.store');
+    Route::put('/category-profits/{categoryProfit}', [App\Http\Controllers\Admin\GlobalProfitController::class, 'updateCategoryProfit'])->name('category-profits.update');
+    Route::delete('/category-profits/{categoryProfit}', [App\Http\Controllers\Admin\GlobalProfitController::class, 'destroyCategoryProfit'])->name('category-profits.destroy');
+    Route::post('/category-profits/{categoryProfit}/toggle', [App\Http\Controllers\Admin\GlobalProfitController::class, 'toggleCategoryProfit'])->name('category-profits.toggle');
 });

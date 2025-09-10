@@ -85,7 +85,7 @@ class XmlImportService
             'fiyat_sk' => $this->parseDecimal($productXml->Fiyat_SK),
             'fiyat_bayi' => $this->parseDecimal($productXml->Fiyat_Bayi),
             'fiyat_ozel' => $this->parseDecimal($productXml->Fiyat_Ozel),
-            'doviz' => (string) $productXml->Doviz ?: 'USD',
+            'doviz' => $this->normalizeCurrency((string) ($productXml->Doviz ?? '')),
             'marka' => (string) $productXml->Marka,
             'kategori' => (string) $productXml->Kategori,
             'ana_grup_kod' => (string) $productXml->AnaGrup_Kod,
@@ -129,26 +129,54 @@ class XmlImportService
         // Mevcut resimleri sil
         $product->images()->delete();
 
+        $imageOptimizationService = app(\App\Services\ImageOptimizationService::class);
+
         // Ana resim
         if (!empty($productXml->AnaResim)) {
-            ProductImage::create([
-                'product_id' => $product->id,
-                'urun_kodu' => $product->kod,
-                'resim_url' => (string) $productXml->AnaResim,
-                'sort_order' => 0,
-            ]);
+            $imageUrl = (string) $productXml->AnaResim;
+            $result = $imageOptimizationService->optimizeFromUrl($imageUrl, 'products');
+            
+            if ($result['success']) {
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'urun_kodu' => $product->kod,
+                    'resim_url' => $result['original_url'],
+                    'sort_order' => 0,
+                ]);
+            } else {
+                // Fallback to original URL if optimization fails
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'urun_kodu' => $product->kod,
+                    'resim_url' => $imageUrl,
+                    'sort_order' => 0,
+                ]);
+            }
         }
 
         // Diğer resimler
         if (isset($productXml->urunResimleri->UrunResimler)) {
             $sortOrder = 1;
             foreach ($productXml->urunResimleri->UrunResimler as $imageXml) {
-                ProductImage::create([
-                    'product_id' => $product->id,
-                    'urun_kodu' => (string) $imageXml->UrunKodu,
-                    'resim_url' => (string) $imageXml->Resim,
-                    'sort_order' => $sortOrder++,
-                ]);
+                $imageUrl = (string) $imageXml->Resim;
+                $result = $imageOptimizationService->optimizeFromUrl($imageUrl, 'products');
+                
+                if ($result['success']) {
+                    ProductImage::create([
+                        'product_id' => $product->id,
+                        'urun_kodu' => (string) $imageXml->UrunKodu,
+                        'resim_url' => $result['original_url'],
+                        'sort_order' => $sortOrder++,
+                    ]);
+                } else {
+                    // Fallback to original URL if optimization fails
+                    ProductImage::create([
+                        'product_id' => $product->id,
+                        'urun_kodu' => (string) $imageXml->UrunKodu,
+                        'resim_url' => $imageUrl,
+                        'sort_order' => $sortOrder++,
+                    ]);
+                }
             }
         }
     }
@@ -208,5 +236,31 @@ class XmlImportService
         return Product::where('miktar', '>=', 2)
             ->where('is_active', false)
             ->update(['is_active' => true]);
+    }
+
+    /**
+     * Para birimini normalize et - boş veya geçersiz değerler için TL döndür
+     */
+    private function normalizeCurrency(string $currency): string
+    {
+        // Boş veya sadece boşluk karakteri içeren değerler
+        if (empty(trim($currency))) {
+            return 'TL';
+        }
+
+        // Geçerli para birimlerini kontrol et
+        $validCurrencies = ['TL', 'USD', 'EUR'];
+        $normalizedCurrency = strtoupper(trim($currency));
+
+        // Eğer geçerli bir para birimi değilse TL döndür
+        if (!in_array($normalizedCurrency, $validCurrencies)) {
+            \Log::warning('Geçersiz para birimi, TL olarak ayarlandı', [
+                'original_currency' => $currency,
+                'normalized_currency' => $normalizedCurrency
+            ]);
+            return 'TL';
+        }
+
+        return $normalizedCurrency;
     }
 }

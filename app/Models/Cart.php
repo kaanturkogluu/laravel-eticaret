@@ -56,6 +56,14 @@ class Cart extends Model
     }
 
     /**
+     * Kar dahil toplam fiyat hesapla
+     */
+    public function getTotalPriceWithProfitAttribute()
+    {
+        return $this->quantity * $this->product->price_with_profit;
+    }
+
+    /**
      * Kullanıcı sepetini getir
      */
     public static function getUserCart($userId = null, $sessionId = null)
@@ -105,7 +113,7 @@ class Cart extends Model
     public function getFormattedTotalPriceAttribute()
     {
         $symbol = $this->product->getCurrencySymbol();
-        return number_format($this->total_price, 2) . ' ' . $symbol;
+        return number_format($this->total_price, 2) . ' ' . $symbol . ' +KDV';
     }
 
     /**
@@ -114,7 +122,7 @@ class Cart extends Model
     public function getFormattedUnitPriceAttribute()
     {
         $symbol = $this->product->getCurrencySymbol();
-        return number_format($this->product->best_price, 2) . ' ' . $symbol;
+        return number_format($this->product->best_price, 2) . ' ' . $symbol . ' +KDV';
     }
 
     /**
@@ -136,7 +144,29 @@ class Cart extends Model
      */
     public function getFormattedTotalPriceInTryAttribute()
     {
-        return number_format($this->total_price_in_try, 2) . ' ₺';
+        return number_format($this->total_price_in_try, 2) . ' ₺ +KDV';
+    }
+
+    /**
+     * Kar dahil TL karşılığı toplam fiyat
+     */
+    public function getTotalPriceWithProfitInTryAttribute()
+    {
+        if ($this->product->doviz === 'TRY') {
+            return $this->total_price_with_profit;
+        }
+        
+        // Diğer para birimleri için döviz kuru ile çarp
+        $rate = \App\Models\Currency::getRate($this->product->doviz);
+        return $this->total_price_with_profit * $rate;
+    }
+
+    /**
+     * Formatlanmış kar dahil TL karşılığı toplam fiyat
+     */
+    public function getFormattedTotalPriceWithProfitInTryAttribute()
+    {
+        return number_format($this->total_price_with_profit_in_try, 2) . ' ₺ +KDV';
     }
 
     /**
@@ -148,6 +178,18 @@ class Cart extends Model
         
         return $cartItems->sum(function ($item) {
             return $item->total_price_in_try;
+        });
+    }
+
+    /**
+     * Sepet toplamını kar dahil TL karşılığında hesapla
+     */
+    public static function getCartTotalWithProfitInTry($userId = null, $sessionId = null)
+    {
+        $cartItems = static::getUserCart($userId, $sessionId);
+        
+        return $cartItems->sum(function ($item) {
+            return $item->total_price_with_profit_in_try;
         });
     }
 

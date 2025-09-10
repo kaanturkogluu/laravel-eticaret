@@ -238,15 +238,6 @@
         border-color: var(--secondary-color);
     }
     
-    .banner-carousel {
-        height: 400px;
-        border-radius: 15px;
-        overflow: hidden;
-    }
-    .banner-carousel .carousel-item img {
-        height: 400px;
-        object-fit: cover;
-    }
     .campaign-card {
         border-radius: 15px;
         overflow: hidden;
@@ -471,20 +462,177 @@
         padding: 60px 0;
         margin: 50px 0;
     }
-    @media (max-width: 768px) {
-        .hero-banner {
-            padding: 30px 0;
+    /* Main Slider Styles */
+    .main-slider {
+        height: 500px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .slider-image-container {
+        position: relative;
+        height: 500px;
+        overflow: hidden;
+    }
+    
+    .slider-image {
+        height: 500px;
+        object-fit: cover;
+        width: 100%;
+        transition: transform 0.5s ease;
+    }
+    
+    .slider-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%);
+        z-index: 1;
+    }
+    
+    .slider-caption {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+        text-align: center;
+        color: white;
+        width: 100%;
+    }
+    
+    .slider-title {
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        animation: slideInUp 1s ease-out;
+    }
+    
+    .slider-description {
+        font-size: 1.3rem;
+        margin-bottom: 2rem;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+        animation: slideInUp 1s ease-out 0.3s both;
+    }
+    
+    .slider-btn {
+        border-radius: 50px;
+        padding: 15px 40px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        animation: slideInUp 1s ease-out 0.6s both;
+        transition: all 0.3s ease;
+    }
+    
+    .slider-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    }
+    
+    .slider-control {
+        width: 60px;
+        height: 60px;
+        background: rgba(0,0,0,0.5);
+        border-radius: 50%;
+        top: 50%;
+        transform: translateY(-50%);
+        transition: all 0.3s ease;
+        border: 2px solid rgba(255,255,255,0.3);
+        z-index: 10;
+        position: absolute;
+    }
+    
+    .slider-control:hover {
+        background: rgba(0,0,0,0.7);
+        border-color: rgba(255,255,255,0.6);
+        transform: translateY(-50%) scale(1.1);
+    }
+    
+    .slider-control .carousel-control-prev-icon,
+    .slider-control .carousel-control-next-icon {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .carousel-control-prev {
+        left: 20px;
+    }
+    
+    .carousel-control-next {
+        right: 20px;
+    }
+    
+    .main-slider .carousel-indicators {
+        bottom: 30px;
+        z-index: 3;
+    }
+    
+    .main-slider .carousel-indicators button {
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        margin: 0 8px;
+        border: 3px solid white;
+        background: transparent;
+        transition: all 0.3s ease;
+        opacity: 0.7;
+    }
+    
+    .main-slider .carousel-indicators button.active {
+        background: white;
+        opacity: 1;
+        transform: scale(1.3);
+    }
+    
+    /* Animations */
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
         }
-        .banner-carousel {
-            height: 250px;
-        }
-        .banner-carousel .carousel-item img {
-            height: 250px;
-        }
-        .product-image {
-            height: 150px;
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
     }
+
+     @media (max-width: 768px) {
+         .hero-banner {
+             padding: 30px 0;
+         }
+         .main-slider {
+             height: 300px;
+         }
+         .slider-image-container {
+             height: 300px;
+         }
+         .slider-image {
+             height: 300px;
+         }
+         .slider-title {
+             font-size: 2rem;
+         }
+         .slider-description {
+             font-size: 1rem;
+         }
+         .product-image {
+             height: 150px;
+         }
+     }
+     
+     @media (max-width: 576px) {
+         .slider-title {
+             font-size: 1.5rem;
+         }
+         .slider-description {
+             font-size: 0.9rem;
+         }
+     }
 </style>
 @endsection
 
@@ -578,42 +726,53 @@
 </section>
 
 <div class="container-fluid px-0">
-    <!-- Banner Carousel -->
-    @if($banners->count() > 0)
+    <!-- Main Slider -->
+    @if($sliders->count() > 0)
     <section class="mb-4 py-4">
-        <div class="container">
-            <div id="bannerCarousel" class="carousel slide banner-carousel" data-bs-ride="carousel">
+        <div class="container-fluid px-0">
+            <div id="mainSlider" class="carousel slide main-slider" data-bs-ride="carousel" data-bs-interval="5000">
                 <div class="carousel-indicators">
-                    @foreach($banners as $index => $banner)
-                        <button type="button" data-bs-target="#bannerCarousel" data-bs-slide-to="{{ $index }}" 
+                    @foreach($sliders as $index => $slider)
+                        <button type="button" data-bs-target="#mainSlider" data-bs-slide-to="{{ $index }}" 
                                 class="{{ $index === 0 ? 'active' : '' }}" aria-current="{{ $index === 0 ? 'true' : 'false' }}" 
                                 aria-label="Slide {{ $index + 1 }}"></button>
                     @endforeach
                 </div>
                 <div class="carousel-inner">
-                    @foreach($banners as $index => $banner)
+                    @foreach($sliders as $index => $slider)
                         <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
-                            @if($banner->image_url)
-                                <img src="{{ $banner->image_url }}" class="d-block w-100" alt="{{ $banner->title }}">
-                            @endif
-                            <div class="carousel-caption d-none d-md-block">
-                                <h5>{{ $banner->title }}</h5>
-                                @if($banner->description)
-                                    <p>{{ $banner->description }}</p>
-                                @endif
-                                @if($banner->link_url)
-                                    <a href="{{ $banner->link_url }}" class="btn btn-warning btn-lg">Detayları Gör</a>
-                                @endif
+                            <div class="slider-image-container">
+                                <img src="{{ asset('storage/' . $slider->image_url) }}" 
+                                     class="d-block w-100 slider-image" 
+                                     alt="{{ $slider->title }}">
+                                <div class="slider-overlay"></div>
+                            </div>
+                            <div class="carousel-caption slider-caption">
+                                <div class="container">
+                                    <div class="row justify-content-center">
+                                        <div class="col-lg-8 text-center">
+                                            <h2 class="slider-title">{{ $slider->title }}</h2>
+                                            @if($slider->description)
+                                                <p class="slider-description">{{ $slider->description }}</p>
+                                            @endif
+                                            @if($slider->link_url && $slider->link_text)
+                                                <a href="{{ $slider->link_url }}" class="btn btn-warning btn-lg slider-btn">
+                                                    {{ $slider->link_text }}
+                                                </a>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     @endforeach
                 </div>
-                @if($banners->count() > 1)
-                    <button class="carousel-control-prev" type="button" data-bs-target="#bannerCarousel" data-bs-slide="prev">
+                @if($sliders->count() > 1)
+                    <button class="carousel-control-prev slider-control" type="button" data-bs-target="#mainSlider" data-bs-slide="prev">
                         <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                         <span class="visually-hidden">Previous</span>
                     </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#bannerCarousel" data-bs-slide="next">
+                    <button class="carousel-control-next slider-control" type="button" data-bs-target="#mainSlider" data-bs-slide="next">
                         <span class="carousel-control-next-icon" aria-hidden="true"></span>
                         <span class="visually-hidden">Next</span>
                     </button>
@@ -622,6 +781,7 @@
         </div>
     </section>
     @endif
+
 
     <!-- Kampanyalar -->
     @if($campaigns->count() > 0)
@@ -691,8 +851,15 @@
                     <div class="card-body">
                         <h5 class="card-title">{{ Str::limit($product->ad, 50) }}</h5>
                         <p class="card-text text-muted">{{ $product->marka }}</p>
-                        <div class="price mb-3 text-danger fw-bold">
-                            {{ $product->formatted_price }}
+                        <div class="price mb-3">
+                            <div class="fw-bold text-success fs-5">
+                                {{ $product->formatted_price_with_profit_in_try }}
+                            </div>
+                            @if($product->doviz !== 'TRY')
+                                <small class="text-muted">
+                                    ({{ $product->formatted_price_with_profit }})
+                                </small>
+                            @endif
                             @if($product->fiyat_sk && $product->fiyat_ozel && $product->fiyat_sk > $product->fiyat_ozel)
                             <br><small class="old-price">{{ number_format($product->fiyat_sk, 2) }} {{ $product->doviz }}</small>
                             @endif
@@ -748,8 +915,15 @@
                     <div class="card-body">
                         <h5 class="card-title">{{ Str::limit($product->ad, 50) }}</h5>
                         <p class="card-text text-muted">{{ $product->marka }}</p>
-                        <div class="price mb-3 text-danger fw-bold">
-                            {{ $product->formatted_price }}
+                        <div class="price mb-3">
+                            <div class="fw-bold text-success fs-5">
+                                {{ $product->formatted_price_with_profit_in_try }}
+                            </div>
+                            @if($product->doviz !== 'TRY')
+                                <small class="text-muted">
+                                    ({{ $product->formatted_price_with_profit }})
+                                </small>
+                            @endif
                         </div>
                         <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted">Stok: {{ $product->miktar }}</small>
@@ -822,6 +996,33 @@
 
 @section('scripts')
 <script>
+// Slider butonları debug
+document.addEventListener('DOMContentLoaded', function() {
+    const slider = document.getElementById('mainSlider');
+    if (slider) {
+        console.log('Slider found:', slider);
+        
+        const prevBtn = slider.querySelector('.carousel-control-prev');
+        const nextBtn = slider.querySelector('.carousel-control-next');
+        
+        if (prevBtn) {
+            console.log('Prev button found:', prevBtn);
+            prevBtn.addEventListener('click', function() {
+                console.log('Prev button clicked');
+            });
+        }
+        
+        if (nextBtn) {
+            console.log('Next button found:', nextBtn);
+            nextBtn.addEventListener('click', function() {
+                console.log('Next button clicked');
+            });
+        }
+    } else {
+        console.log('Slider not found');
+    }
+});
+
 // Favori toggle fonksiyonu
 function toggleFavorite(productKod, button) {
     const $button = $(button);

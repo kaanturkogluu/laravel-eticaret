@@ -125,6 +125,78 @@
                                         </div>
                                     </div>
                                     
+                                    <!-- Kar Ayarları -->
+                                    <div class="mt-4">
+                                        <h6 class="text-primary">
+                                            <i class="fas fa-chart-line me-2"></i>Kar Ayarları
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="mb-3">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="profit_enabled" 
+                                                               name="profit_enabled" value="1" 
+                                                               {{ old('profit_enabled', $product->profit_enabled) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="profit_enabled">
+                                                            Kar Hesaplaması Aktif
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="col-md-4">
+                                                <div class="mb-3">
+                                                    <label for="profit_type" class="form-label">Kar Türü</label>
+                                                    <select class="form-select @error('profit_type') is-invalid @enderror" 
+                                                            id="profit_type" name="profit_type">
+                                                        <option value="0" {{ old('profit_type', $product->profit_type) == 0 ? 'selected' : '' }}>
+                                                            Kar Yok
+                                                        </option>
+                                                        <option value="1" {{ old('profit_type', $product->profit_type) == 1 ? 'selected' : '' }}>
+                                                            Yüzde Kar
+                                                        </option>
+                                                        <option value="2" {{ old('profit_type', $product->profit_type) == 2 ? 'selected' : '' }}>
+                                                            Sabit Kar
+                                                        </option>
+                                                    </select>
+                                                    @error('profit_type')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="col-md-4">
+                                                <div class="mb-3">
+                                                    <label for="profit_value" class="form-label">
+                                                        <span id="profit_label">Kar Değeri</span>
+                                                    </label>
+                                                    <input type="number" class="form-control @error('profit_value') is-invalid @enderror" 
+                                                           id="profit_value" name="profit_value" 
+                                                           value="{{ old('profit_value', $product->profit_value) }}" 
+                                                           min="0" step="0.01">
+                                                    @error('profit_value')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Kar Önizleme -->
+                                        <div class="alert alert-info" id="profit_preview" style="display: none;">
+                                            <h6>Fiyat Önizleme:</h6>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <strong>Orijinal Fiyat:</strong> 
+                                                    <span id="original_price_display">{{ $product->formatted_price }}</span>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <strong>Kar Dahil Fiyat:</strong> 
+                                                    <span id="profit_price_display" class="text-success"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
                                     <!-- Fiyat Geçmişi -->
                                     @if($product->priceHistory->count() > 0)
                                         <div class="mt-3">
@@ -212,7 +284,7 @@
                             
                             <div class="mb-3">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="1"
                                            {{ old('is_active', $product->is_active) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="is_active">
                                         Ürünü aktif yap
@@ -238,18 +310,40 @@
                             @endif
                             
                             <div class="mb-3">
-                                <label for="image" class="form-label">Yeni Resim Ekle</label>
-                                <input type="file" class="form-control @error('image') is-invalid @enderror" 
-                                       id="image" name="image" accept="image/*" onchange="previewImage(this)">
-                                @error('image')
+                                <label for="images" class="form-label">Yeni Resimler Ekle</label>
+                                <input type="file" class="form-control @error('images.*') is-invalid @enderror" 
+                                       id="images" name="images[]" accept="image/*" multiple onchange="previewMultipleImages(this)">
+                                @error('images.*')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <small class="form-text text-muted">JPG, PNG, GIF, WebP formatları desteklenir. Maksimum 5MB.</small>
+                                <small class="form-text text-muted">
+                                    JPG, PNG, GIF, WebP formatları desteklenir. Maksimum 5MB per resim.<br>
+                                    <strong>Birden fazla resim seçmek için Ctrl tuşuna basılı tutun.</strong>
+                                </small>
                                 
-                                <div id="image-preview" class="mt-3" style="display: none;">
-                                    <img id="preview-img" src="" alt="Önizleme" class="img-fluid rounded" style="max-height: 200px;">
-                                </div>
+                                <div id="images-preview" class="row mt-3" style="display: none;"></div>
                             </div>
+                            
+                            <!-- Mevcut Resimleri Sil -->
+                            @if($product->images->count() > 0)
+                                <div class="mb-3">
+                                    <label class="form-label">Mevcut Resimleri Sil</label>
+                                    <div class="row">
+                                        @foreach($product->images as $image)
+                                            <div class="col-6 mb-2">
+                                                <div class="position-relative">
+                                                    <img src="{{ $image->resim_url }}" alt="{{ $product->ad }}" 
+                                                         class="img-thumbnail" style="width: 100%; height: 80px; object-fit: cover;">
+                                                    <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0" 
+                                                            style="margin: 2px;" onclick="deleteImage({{ $image->id }})">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
                             
                             <!-- Ürün İstatistikleri -->
                             <div class="card bg-light">
@@ -301,16 +395,60 @@
 
 @section('scripts')
 <script>
-    function previewImage(input) {
-        if (input.files && input.files[0]) {
-            var reader = new FileReader();
+    function previewMultipleImages(input) {
+        const previewContainer = $('#images-preview');
+        previewContainer.empty();
+        
+        if (input.files && input.files.length > 0) {
+            Array.from(input.files).forEach((file, index) => {
+                if (file.type.match('image.*')) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const previewCol = `
+                            <div class="col-6 mb-2">
+                                <div class="position-relative">
+                                    <img src="${e.target.result}" alt="Önizleme ${index + 1}" 
+                                         class="img-thumbnail" style="width: 100%; height: 80px; object-fit: cover;">
+                                    <span class="badge bg-primary position-absolute top-0 start-0" style="margin: 2px;">
+                                        ${index + 1}
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                        previewContainer.append(previewCol);
+                    }
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
             
-            reader.onload = function(e) {
-                $('#preview-img').attr('src', e.target.result);
-                $('#image-preview').show();
-            }
-            
-            reader.readAsDataURL(input.files[0]);
+            previewContainer.show();
+        } else {
+            previewContainer.hide();
+        }
+    }
+    
+    function deleteImage(imageId) {
+        if (confirm('Bu resmi silmek istediğinizden emin misiniz?')) {
+            $.ajax({
+                url: `/admin/product-images/${imageId}`,
+                method: 'DELETE',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Sayfayı yenile
+                        location.reload();
+                    } else {
+                        alert('Resim silinirken bir hata oluştu.');
+                    }
+                },
+                error: function() {
+                    alert('Resim silinirken bir hata oluştu.');
+                }
+            });
         }
     }
     
@@ -331,6 +469,92 @@
         $('input[name^="fiyat_"]').each(function() {
             $(this).data('original-value', $(this).val());
         });
+        
+        // Kar hesaplama fonksiyonlarını başlat
+        initProfitCalculation();
     });
+    
+    // Kar hesaplama fonksiyonları
+    function initProfitCalculation() {
+        // Kar türü değiştiğinde
+        $('#profit_type').on('change', function() {
+            updateProfitLabel();
+            calculateProfit();
+        });
+        
+        // Kar değeri değiştiğinde
+        $('#profit_value').on('input', function() {
+            calculateProfit();
+        });
+        
+        // Kar aktif checkbox değiştiğinde
+        $('#profit_enabled').on('change', function() {
+            calculateProfit();
+        });
+        
+        // Fiyat değiştiğinde
+        $('input[name^="fiyat_"]').on('input', function() {
+            calculateProfit();
+        });
+        
+        // İlk yüklemede hesapla
+        updateProfitLabel();
+        calculateProfit();
+    }
+    
+    function updateProfitLabel() {
+        const profitType = $('#profit_type').val();
+        const profitLabel = $('#profit_label');
+        
+        switch(profitType) {
+            case '1':
+                profitLabel.text('Kar Yüzdesi (%)');
+                break;
+            case '2':
+                profitLabel.text('Sabit Kar Tutarı');
+                break;
+            default:
+                profitLabel.text('Kar Değeri');
+        }
+    }
+    
+    function calculateProfit() {
+        const profitEnabled = $('#profit_enabled').is(':checked');
+        const profitType = $('#profit_type').val();
+        const profitValue = parseFloat($('#profit_value').val()) || 0;
+        
+        if (!profitEnabled || profitType == '0') {
+            $('#profit_preview').hide();
+            return;
+        }
+        
+        // En düşük fiyatı bul
+        const fiyatOzel = parseFloat($('#fiyat_ozel').val()) || 0;
+        const fiyatBayi = parseFloat($('#fiyat_bayi').val()) || 0;
+        const fiyatSk = parseFloat($('#fiyat_sk').val()) || 0;
+        
+        const prices = [fiyatOzel, fiyatBayi, fiyatSk].filter(p => p > 0);
+        const basePrice = Math.min(...prices);
+        
+        if (basePrice <= 0) {
+            $('#profit_preview').hide();
+            return;
+        }
+        
+        let profitPrice = basePrice;
+        
+        switch(profitType) {
+            case '1': // Yüzde kar
+                profitPrice = basePrice * (1 + (profitValue / 100));
+                break;
+            case '2': // Sabit kar
+                profitPrice = basePrice + profitValue;
+                break;
+        }
+        
+        // Önizleme göster
+        $('#profit_price_display').text(profitPrice.toFixed(2) + ' {{ $product->doviz }} +KDV');
+        $('#profit_preview').show();
+    }
 </script>
 @endsection

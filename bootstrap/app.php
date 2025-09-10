@@ -22,11 +22,6 @@ return Application::configure(basePath: dirname(__DIR__))
         // Rate limiting middleware'lerini ekle
         $middleware->throttleApi();
     })
-    ->withRateLimiting(function () {
-        return [
-            'api' => \Illuminate\Cache\RateLimiting\Limit::perMinute(100)->by(request()->user()?->id ?: request()->ip()),
-        ];
-    })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

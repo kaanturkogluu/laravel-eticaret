@@ -77,8 +77,8 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         \Log::info('Manuel ürün ekleme başladı', [
-            'request_data' => $request->except(['image']),
-            'has_image' => $request->hasFile('image'),
+            'request_data' => $request->except(['images']),
+            'has_images' => $request->hasFile('images'),
             'files' => $request->allFiles()
         ]);
 
@@ -91,7 +91,11 @@ class ProductController extends Controller
             'miktar' => 'required|integer|min:0',
             'doviz' => 'required|string|in:TL,USD,EUR',
             'aciklama' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120'
+            'is_active' => 'boolean',
+            'profit_enabled' => 'boolean',
+            'profit_type' => 'integer|in:0,1,2',
+            'profit_value' => 'nullable|numeric|min:0',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120'
         ]);
 
         $product = Product::create([
@@ -103,36 +107,57 @@ class ProductController extends Controller
             'miktar' => $request->miktar,
             'doviz' => $request->doviz,
             'aciklama' => $request->aciklama,
-            'is_active' => true
+            'is_active' => $request->has('is_active'),
+            'profit_enabled' => $request->has('profit_enabled'),
+            'profit_type' => $request->profit_type ?? 0,
+            'profit_value' => $request->profit_value ?? 0
         ]);
 
-        if ($request->hasFile('image')) {
-            try {
-                $imagePath = $request->file('image')->store('products', 'public');
-                $imageUrl = Storage::url($imagePath);
-                
-                ProductImage::create([
-                    'product_id' => $product->id,
-                    'urun_kodu' => $product->kod,
-                    'resim_url' => $imageUrl,
-                    'sort_order' => 0
-                ]);
-                
-                \Log::info('Resim başarıyla yüklendi', [
-                    'product_id' => $product->id,
-                    'image_path' => $imagePath,
-                    'image_url' => $imageUrl
-                ]);
-            } catch (\Exception $e) {
-                \Log::error('Resim yükleme hatası', [
-                    'error' => $e->getMessage(),
-                    'product_id' => $product->id
-                ]);
+        // Çoklu resim upload işlemi
+        if ($request->hasFile('images')) {
+            \Log::info('Ürün oluşturma - resim upload başladı', [
+                'product_id' => $product->id,
+                'image_count' => count($request->file('images'))
+            ]);
+
+            foreach ($request->file('images') as $index => $imageFile) {
+                try {
+                    $imageOptimizationService = app(\App\Services\ImageOptimizationService::class);
+                    $result = $imageOptimizationService->optimizeAndStore($imageFile, 'products');
+                    
+                    if ($result['success']) {
+                        ProductImage::create([
+                            'product_id' => $product->id,
+                            'urun_kodu' => $product->kod,
+                            'resim_url' => $result['original_url'],
+                            'sort_order' => $index
+                        ]);
+                        
+                        \Log::info('Ürün oluşturma - resim başarıyla yüklendi', [
+                            'product_id' => $product->id,
+                            'image_index' => $index,
+                            'sort_order' => $index,
+                            'original_url' => $result['original_url']
+                        ]);
+                    } else {
+                        \Log::error('Ürün oluşturma - resim optimizasyon hatası', [
+                            'error' => $result['error'],
+                            'product_id' => $product->id,
+                            'image_index' => $index
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Ürün oluşturma - resim yükleme hatası', [
+                        'error' => $e->getMessage(),
+                        'product_id' => $product->id,
+                        'image_index' => $index
+                    ]);
+                }
             }
         } else {
             \Log::info('Resim dosyası bulunamadı', [
                 'files' => $request->allFiles(),
-                'has_file' => $request->hasFile('image')
+                'has_file' => $request->hasFile('images')
             ]);
         }
 
@@ -160,11 +185,66 @@ class ProductController extends Controller
             'miktar' => 'required|integer|min:0',
             'doviz' => 'required|string|in:TL,USD,EUR',
             'aciklama' => 'nullable|string',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'profit_enabled' => 'boolean',
+            'profit_type' => 'integer|in:0,1,2',
+            'profit_value' => 'nullable|numeric|min:0',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120'
         ]);
 
+        // Checkbox'ları düzgün işle
+        $data = $request->all();
+        $data['is_active'] = $request->has('is_active');
+        $data['profit_enabled'] = $request->has('profit_enabled');
+
         // Fiyat kontrolü ile güncelle
-        $product->updateWithPriceCheck($request->all());
+        $product->updateWithPriceCheck($data);
+
+        // Çoklu resim upload işlemi
+        if ($request->hasFile('images')) {
+            \Log::info('Ürün güncelleme - resim upload başladı', [
+                'product_id' => $product->id,
+                'image_count' => count($request->file('images'))
+            ]);
+
+            foreach ($request->file('images') as $index => $imageFile) {
+                try {
+                    $imageOptimizationService = app(\App\Services\ImageOptimizationService::class);
+                    $result = $imageOptimizationService->optimizeAndStore($imageFile, 'products');
+                    
+                    if ($result['success']) {
+                        // Mevcut resimlerin en yüksek sort_order değerini bul
+                        $lastSortOrder = $product->images()->max('sort_order') ?? -1;
+                        
+                        \App\Models\ProductImage::create([
+                            'product_id' => $product->id,
+                            'urun_kodu' => $product->kod,
+                            'resim_url' => $result['original_url'],
+                            'sort_order' => $lastSortOrder + 1 + $index
+                        ]);
+                        
+                        \Log::info('Ürün güncelleme - resim başarıyla yüklendi', [
+                            'product_id' => $product->id,
+                            'image_index' => $index,
+                            'sort_order' => $lastSortOrder + 1 + $index,
+                            'original_url' => $result['original_url']
+                        ]);
+                    } else {
+                        \Log::error('Ürün güncelleme - resim optimizasyon hatası', [
+                            'error' => $result['error'],
+                            'product_id' => $product->id,
+                            'image_index' => $index
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Ürün güncelleme - resim yükleme hatası', [
+                        'error' => $e->getMessage(),
+                        'product_id' => $product->id,
+                        'image_index' => $index
+                    ]);
+                }
+            }
+        }
 
         return redirect()->back()->with('success', 'Ürün başarıyla güncellendi!');
     }
@@ -173,5 +253,44 @@ class ProductController extends Controller
     {
         $product->delete();
         return redirect()->back()->with('success', 'Ürün başarıyla silindi!');
+    }
+
+    /**
+     * Ürün resmini sil
+     */
+    public function deleteImage($imageId)
+    {
+        try {
+            $image = \App\Models\ProductImage::findOrFail($imageId);
+            
+            // Dosyayı sil
+            if (file_exists(public_path($image->resim_url))) {
+                unlink(public_path($image->resim_url));
+            }
+            
+            // Veritabanından sil
+            $image->delete();
+            
+            \Log::info('Ürün resmi silindi', [
+                'image_id' => $imageId,
+                'resim_url' => $image->resim_url
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Resim başarıyla silindi.'
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Resim silme hatası', [
+                'image_id' => $imageId,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Resim silinirken bir hata oluştu.'
+            ], 500);
+        }
     }
 }

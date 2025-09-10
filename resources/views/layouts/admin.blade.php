@@ -672,6 +672,31 @@
             margin-right: 0;
         }
 
+        /* Navigation Section Header */
+        .nav-section-header {
+            color: rgba(255,255,255,0.6);
+            padding: 8px 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nav-section-header i {
+            width: 20px;
+            margin-right: 8px;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+
+        .sidebar.collapsed .nav-section-header {
+            display: none;
+        }
+
         /* Main Content */
         .main-content {
             margin-left: var(--sidebar-width);
@@ -937,6 +962,28 @@
                         <i class="fas fa-box"></i>
                         <span>Ürün Yönetimi</span>
                     </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('admin.sliders.*') ? 'active' : '' }}" href="{{ route('admin.sliders.index') }}">
+                        <i class="fas fa-images"></i>
+                        <span>Slider Yönetimi</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('admin.global-profit.*') ? 'active' : '' }}" href="{{ route('admin.global-profit.index') }}">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Genel Kar Ayarları</span>
+                    </a>
+                </li>
+                
+                <!-- XML İşlemleri Başlığı -->
+                <li class="nav-item mt-3">
+                    <div class="nav-section-header">
+                        <i class="fas fa-file-code"></i>
+                        <span>XML İşlemleri</span>
+                    </div>
                 </li>
                 
                 <li class="nav-item">

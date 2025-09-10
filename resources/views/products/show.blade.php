@@ -14,11 +14,14 @@
                     <div class="carousel-inner">
                         @foreach($product->images as $index => $image)
                             <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
-                                <img src="{{ $image->resim_url }}" 
-                                     class="d-block w-100 rounded" 
-                                     alt="{{ $product->ad }}"
-                                     style="height: 400px; object-fit: cover;"
-                                     onerror="handleImageError(this)">
+                                <div class="image-container" style="height: 400px;">
+                                    <img src="{{ $image->resim_url }}" 
+                                         class="d-block w-100 rounded product-image" 
+                                         alt="{{ $product->ad }}"
+                                         style="height: 100%; object-fit: cover;"
+                                         loading="{{ $index === 0 ? 'eager' : 'lazy' }}"
+                                         onerror="this.src='{{ asset('images/no-product-image.svg') }}'">
+                                </div>
                             </div>
                         @endforeach
                     </div>
@@ -71,7 +74,12 @@
                 </div>
 
                 <div class="mb-3">
-                    <h4 class="price text-success">{{ $product->formatted_price }}</h4>
+                    <h4 class="price text-success">{{ $product->formatted_price_with_profit_in_try }}</h4>
+                    @if($product->doviz !== 'TRY')
+                        <small class="text-muted">
+                            ({{ $product->formatted_price_with_profit }})
+                        </small>
+                    @endif
                 </div>
 
                 <div class="mb-3">

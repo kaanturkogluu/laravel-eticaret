@@ -11,7 +11,8 @@ class Product extends Model
         'kod', 'ad', 'miktar', 'fiyat_sk', 'fiyat_bayi', 'fiyat_ozel',
         'doviz', 'marka', 'kategori', 'ana_grup_kod', 'ana_grup_ad',
         'alt_grup_kod', 'alt_grup_ad', 'ana_resim', 'barkod', 'aciklama',
-        'detay', 'desi', 'kdv', 'is_active', 'featured', 'featured_order', 'last_updated'
+        'detay', 'desi', 'kdv', 'is_active', 'featured', 'featured_order', 'last_updated',
+        'profit_type', 'profit_value', 'profit_enabled'
     ];
 
     protected $casts = [
@@ -23,6 +24,9 @@ class Product extends Model
         'featured' => 'boolean',
         'featured_order' => 'integer',
         'last_updated' => 'datetime',
+        'profit_type' => 'integer',
+        'profit_value' => 'decimal:2',
+        'profit_enabled' => 'boolean',
     ];
 
     /**
@@ -111,12 +115,89 @@ class Product extends Model
     }
 
     /**
+     * En uygun fiyatı TL'ye çevir
+     */
+    public function getBestPriceInTryAttribute()
+    {
+        $bestPrice = $this->best_price;
+        if (!$bestPrice) {
+            return 0;
+        }
+
+        if (strtoupper($this->doviz) === 'TRY') {
+            return $bestPrice;
+        }
+
+        $currencyService = app(\App\Services\CurrencyService::class);
+        return $currencyService->convertToTry($bestPrice, $this->doviz);
+    }
+
+    /**
+     * Kar dahil fiyat hesapla (Kategori kar sistemi ile)
+     */
+    public function getPriceWithProfitAttribute()
+    {
+        $basePrice = $this->best_price;
+        if (!$basePrice) {
+            return $basePrice;
+        }
+
+        // Yeni kategori kar sistemi kullan
+        return $this->calculatePriceWithCategoryProfit('fiyat_sk');
+    }
+
+    /**
+     * Kar dahil fiyatı TL'ye çevir
+     */
+    public function getPriceWithProfitInTryAttribute()
+    {
+        $priceWithProfit = $this->price_with_profit;
+        if (!$priceWithProfit) {
+            return 0;
+        }
+
+        if (strtoupper($this->doviz) === 'TRY') {
+            return $priceWithProfit;
+        }
+
+        $currencyService = app(\App\Services\CurrencyService::class);
+        return $currencyService->convertToTry($priceWithProfit, $this->doviz);
+    }
+
+    /**
      * Fiyat formatı
      */
     public function getFormattedPriceAttribute()
     {
         $price = $this->best_price;
-        return $price ? number_format($price, 2) . ' ' . $this->getCurrencySymbol() : 'Fiyat Belirtilmemiş';
+        return $price ? number_format($price, 2) . ' ' . $this->getCurrencySymbol() . ' +KDV' : 'Fiyat Belirtilmemiş';
+    }
+
+    /**
+     * TL fiyat formatı
+     */
+    public function getFormattedPriceInTryAttribute()
+    {
+        $price = $this->best_price_in_try;
+        return $price ? number_format($price, 2) . ' ₺ +KDV' : 'Fiyat Belirtilmemiş';
+    }
+
+    /**
+     * Kar dahil fiyat formatı
+     */
+    public function getFormattedPriceWithProfitAttribute()
+    {
+        $price = $this->price_with_profit;
+        return $price ? number_format($price, 2) . ' ' . $this->getCurrencySymbol() . ' +KDV' : 'Fiyat Belirtilmemiş';
+    }
+
+    /**
+     * Kar dahil TL fiyat formatı
+     */
+    public function getFormattedPriceWithProfitInTryAttribute()
+    {
+        $price = $this->price_with_profit_in_try;
+        return $price ? number_format($price, 2) . ' ₺ +KDV' : 'Fiyat Belirtilmemiş';
     }
 
     /**
@@ -170,6 +251,103 @@ class Product extends Model
     public function priceHistory()
     {
         return $this->hasMany(\App\Models\ProductPriceHistory::class, 'product_kod', 'kod');
+    }
+
+    /**
+     * Kategori kar ayarını getir
+     */
+    public function getCategoryProfit()
+    {
+        if (empty($this->kategori)) {
+            return null;
+        }
+        
+        return CategoryProfit::getProfitForCategory($this->kategori);
+    }
+
+    /**
+     * Kategori kar dahil fiyat hesapla
+     */
+    public function calculatePriceWithCategoryProfit($priceType = 'fiyat_sk')
+    {
+        $basePrice = $this->$priceType;
+        
+        if (!$basePrice || $basePrice <= 0) {
+            return $basePrice;
+        }
+
+        // Önce ürün özel kar ayarını kontrol et
+        if ($this->profit_enabled && $this->profit_type && $this->profit_value) {
+            return $this->calculateProductProfit($basePrice);
+        }
+
+        // Sonra kategori kar ayarını kontrol et
+        $categoryProfit = $this->getCategoryProfit();
+        if ($categoryProfit) {
+            return $categoryProfit->calculateProfit($basePrice);
+        }
+
+        // Son olarak genel kar ayarını kontrol et
+        $globalSettings = GlobalProfitSetting::getSettings();
+        if ($globalSettings->is_enabled && $globalSettings->profit_type && $globalSettings->profit_value) {
+            return $this->calculateGlobalProfit($basePrice, $globalSettings);
+        }
+
+        return $basePrice;
+    }
+
+    /**
+     * Ürün özel kar hesaplama
+     */
+    private function calculateProductProfit($basePrice)
+    {
+        switch ($this->profit_type) {
+            case 1: // Yüzde kar
+                return $basePrice * (1 + ($this->profit_value / 100));
+            case 2: // Sabit kar
+                return $basePrice + $this->profit_value;
+            default:
+                return $basePrice;
+        }
+    }
+
+    /**
+     * Genel kar hesaplama
+     */
+    private function calculateGlobalProfit($basePrice, $settings)
+    {
+        switch ($settings->profit_type) {
+            case 1: // Yüzde kar
+                return $basePrice * (1 + ($settings->profit_value / 100));
+            case 2: // Sabit kar
+                return $basePrice + $settings->profit_value;
+            default:
+                return $basePrice;
+        }
+    }
+
+    /**
+     * Kategori kar dahil SK fiyatı
+     */
+    public function getPriceSkWithCategoryProfitAttribute()
+    {
+        return $this->calculatePriceWithCategoryProfit('fiyat_sk');
+    }
+
+    /**
+     * Kategori kar dahil Bayi fiyatı
+     */
+    public function getPriceBayiWithCategoryProfitAttribute()
+    {
+        return $this->calculatePriceWithCategoryProfit('fiyat_bayi');
+    }
+
+    /**
+     * Kategori kar dahil Özel fiyatı
+     */
+    public function getPriceOzelWithCategoryProfitAttribute()
+    {
+        return $this->calculatePriceWithCategoryProfit('fiyat_ozel');
     }
 
     /**

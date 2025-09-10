@@ -18,9 +18,10 @@ class CartController extends Controller
         $cartItems = $this->getCartItems();
         $cartTotal = $this->getCartTotal();
         $cartTotalInTry = Cart::getCartTotalInTry(Auth::id(), Session::getId());
+        $cartTotalWithProfitInTry = Cart::getCartTotalWithProfitInTry(Auth::id(), Session::getId());
         $cartCount = $this->getCartCount();
 
-        return view('cart.index', compact('cartItems', 'cartTotal', 'cartTotalInTry', 'cartCount'));
+        return view('cart.index', compact('cartItems', 'cartTotal', 'cartTotalInTry', 'cartTotalWithProfitInTry', 'cartCount'));
     }
 
     /**
